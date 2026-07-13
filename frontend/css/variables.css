@@ -1,0 +1,16 @@
+:root {
+
+    --azul-escuro:#0B3C5D;
+    --azul-claro:#328CC1;
+
+    --branco:#FFFFFF;
+
+    --cinza-claro:#F5F7FA;
+    --cinza-texto:#333333;
+
+    --borda-radius:12px;
+
+    --sombra:
+    0 5px 20px rgba(0,0,0,0.08);
+
+}

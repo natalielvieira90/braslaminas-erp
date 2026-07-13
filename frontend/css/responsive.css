@@ -1,0 +1,34 @@
+@media(max-width:768px){
+
+
+.menu{
+
+flex-direction:column;
+
+}
+
+
+.menu a{
+
+display:block;
+
+margin:10px;
+
+}
+
+
+.banner h1{
+
+font-size:35px;
+
+}
+
+
+.grid{
+
+grid-template-columns:1fr;
+
+}
+
+
+}

@@ -1,0 +1,233 @@
+@import url("./variables.css");
+
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+
+body{
+
+    font-family:Arial, sans-serif;
+
+    background:
+    var(--cinza-claro);
+
+    color:
+    var(--cinza-texto);
+
+}
+
+
+.container{
+
+    width:90%;
+
+    max-width:1200px;
+
+    margin:auto;
+
+}
+
+
+/* HEADER */
+
+
+header{
+
+    background:
+    var(--azul-escuro);
+
+    color:white;
+
+    position:fixed;
+
+    width:100%;
+
+    top:0;
+
+    z-index:100;
+
+}
+
+
+.menu{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:20px;
+
+}
+
+
+.logo{
+
+    font-size:28px;
+
+    font-weight:bold;
+
+}
+
+
+.logo span{
+
+    color:
+    var(--azul-claro);
+
+}
+
+
+.menu a{
+
+    color:white;
+
+    text-decoration:none;
+
+    margin-left:25px;
+
+}
+
+
+
+/* BANNER */
+
+
+.banner{
+
+    height:550px;
+
+    margin-top:80px;
+
+    background:
+
+    linear-gradient(
+    rgba(11,60,93,.8),
+    rgba(11,60,93,.8)
+    ),
+
+    url("../images/banners/banner.jpg");
+
+
+    background-size:cover;
+
+    background-position:center;
+
+    display:flex;
+
+    align-items:center;
+
+    color:white;
+
+}
+
+
+.banner h1{
+
+    font-size:50px;
+
+}
+
+
+.banner p{
+
+    font-size:20px;
+
+    margin:20px 0;
+
+}
+
+
+.btn{
+
+    background:
+    var(--azul-claro);
+
+    color:white;
+
+    padding:15px 30px;
+
+    border-radius:8px;
+
+    text-decoration:none;
+
+}
+
+
+/* PRODUTOS */
+
+
+.produtos{
+
+    padding:70px 0;
+
+}
+
+
+.grid{
+
+    display:grid;
+
+    grid-template-columns:
+    repeat(auto-fit,minmax(250px,1fr));
+
+    gap:30px;
+
+}
+
+
+.card{
+
+    background:white;
+
+    padding:20px;
+
+    border-radius:
+    var(--borda-radius);
+
+    box-shadow:
+    var(--sombra);
+
+}
+
+
+.card img{
+
+    width:100%;
+
+}
+
+
+.preco{
+
+    color:
+    var(--azul-claro);
+
+    font-size:22px;
+
+    font-weight:bold;
+
+}
+
+
+
+/* FOOTER */
+
+
+footer{
+
+background:
+var(--azul-escuro);
+
+color:white;
+
+padding:40px;
+
+text-align:center;
+
+}
