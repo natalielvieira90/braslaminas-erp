@@ -1,7 +1,18 @@
 const orderModel = require("../models/order.model");
 const cartModel = require("../models/cart.model");
+const paymentModel = require("../models/payment.model");
 
 async function checkout(req, res) {
+  const { payment_method, card, shipping_address } = req.body;
+
+  if (!payment_method || !["pix", "credit_card", "boleto"].includes(payment_method)) {
+    return res.status(400).json({ error: "Escolha um método de pagamento (pix, credit_card ou boleto)." });
+  }
+
+  if (!shipping_address || !String(shipping_address).trim()) {
+    return res.status(400).json({ error: "Informe o endereço de entrega." });
+  }
+
   const cartItems = await cartModel.listByUser(req.user.id);
 
   if (!cartItems.length) {
@@ -15,10 +26,23 @@ async function checkout(req, res) {
       name: i.name,
       price: i.price,
       quantity: i.quantity,
-    }))
+    })),
+    { paymentMethod: payment_method, shippingAddress: shipping_address }
   );
 
-  res.status(201).json({ order });
+  let payment;
+  try {
+    payment = await paymentModel.create(order.id, {
+      method: payment_method,
+      amount: order.total,
+      card,
+    });
+  } catch (err) {
+    await orderModel.updateStatus(order.id, "cancelled");
+    throw err;
+  }
+
+  res.status(201).json({ order, payment });
 }
 
 async function listOrders(req, res) {
@@ -37,8 +61,11 @@ async function showOrder(req, res) {
     return res.status(403).json({ error: "Acesso negado." });
   }
 
-  const items = await orderModel.itemsByOrder(order.id);
-  res.json({ order, items });
+  const [items, payment] = await Promise.all([
+    orderModel.itemsByOrder(order.id),
+    paymentModel.findByOrder(order.id),
+  ]);
+  res.json({ order, items, payment });
 }
 
 module.exports = { checkout, listOrders, showOrder };

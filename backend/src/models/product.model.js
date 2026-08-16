@@ -2,7 +2,7 @@ const pool = require("../config/db");
 
 const SELECT_COLUMNS = `
   id, name, slug, description,
-  price, stock, category, image_url, active,
+  price, stock, category, category_id, image_url, active,
   created_at
 `;
 
@@ -52,12 +52,19 @@ async function findById(id) {
   return rows[0];
 }
 
+async function resolveCategoryId(name) {
+  if (!name) return null;
+  const { rows } = await pool.query(`SELECT id FROM categories WHERE name = $1`, [name]);
+  return rows[0] ? rows[0].id : null;
+}
+
 async function create({ name, slug, description, price, stock, category, imageUrl }) {
+  const categoryId = await resolveCategoryId(category);
   const { rows } = await pool.query(
-    `INSERT INTO products (name, slug, description, price, stock, category, image_url)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `INSERT INTO products (name, slug, description, price, stock, category, image_url, category_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      RETURNING ${SELECT_COLUMNS}`,
-    [name, slug, description, price, stock, category, imageUrl]
+    [name, slug, description, price, stock, category, imageUrl, categoryId]
   );
   return rows[0];
 }
@@ -67,11 +74,18 @@ async function update(id, fields) {
   const sets = [];
   const params = [];
 
+  const categoryId =
+    fields.category !== undefined ? await resolveCategoryId(fields.category) : undefined;
+
   for (const key of allowed) {
     if (fields[key] !== undefined) {
       params.push(fields[key]);
       sets.push(`${key} = $${params.length}`);
     }
+  }
+  if (categoryId !== undefined) {
+    params.push(categoryId);
+    sets.push(`category_id = $${params.length}`);
   }
 
   if (!sets.length) return findById(id);

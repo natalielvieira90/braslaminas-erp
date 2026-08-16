@@ -15,6 +15,14 @@ function errorHandler(err, req, res, next) {
     return res.status(409).json({ error: "Registro duplicado." });
   }
 
+  if (err.code === "23503") {
+    return res.status(409).json({ error: "Registro em uso por outro cadastro." });
+  }
+
+  if (err.status >= 400 && err.status < 500) {
+    return res.status(err.status).json({ error: err.message });
+  }
+
   if (err instanceof multer.MulterError) {
     const message =
       err.code === "LIMIT_FILE_SIZE" ? "Arquivo muito grande (máximo 5MB)." : err.message;

@@ -3,6 +3,9 @@ const status = document.getElementById("produtos-status");
 const busca = document.getElementById("busca");
 const categoria = document.getElementById("categoria");
 
+const initialParams = new URLSearchParams(window.location.search);
+const initialCategoria = initialParams.get("categoria");
+
 let allProducts = [];
 
 function skeletonCard() {
@@ -30,6 +33,10 @@ async function loadProducts() {
       option.textContent = c;
       categoria.appendChild(option);
     });
+
+    if (initialCategoria && categories.includes(initialCategoria)) {
+      categoria.value = initialCategoria;
+    }
 
     render();
   } catch (err) {
@@ -64,6 +71,9 @@ function render() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  const term = initialParams.get("busca");
+  if (term) busca.value = term;
+
   loadProducts();
   initAddToCart();
 

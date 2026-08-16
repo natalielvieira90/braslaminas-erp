@@ -23,33 +23,101 @@
 
 <body>
 
-<header>
+<div class="topbar">
 
-<div class="container menu">
+<div class="container topbar-inner">
 
-<div class="logo">
-Bras<span>Lâminas</span>
+<a href="produtos.html" class="topbar-link">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+Todos os favoritos
+</a>
+
+<a href="produtos.html" class="topbar-link">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+Favoritos
+</a>
+
+<a href="login.html" class="topbar-link topbar-cta">Cadastre-se</a>
+
 </div>
 
-<button class="nav-toggle" id="menu-toggle" aria-label="Abrir menu">
-<span></span>
-<span></span>
-<span></span>
-</button>
+</div>
 
-<nav>
-<a href="../index.html">Inicio</a>
-<a href="produtos.html">Produtos</a>
-<a href="contato.html">Contato</a>
-<a href="carrinho.html" class="cart-link">Carrinho<span class="cart-badge" id="cart-count">0</span></a>
-<a href="pedidos.html">Pedidos</a>
-<a href="admin.html" id="nav-admin" style="display:none">Admin</a>
-<a href="login.html" id="nav-auth">Login</a>
-</nav>
+
+<header class="site-header">
+
+<div class="container hdr">
+
+<div class="hdr-left">
+
+<a href="../index.html" class="hdr-logo">
+<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 21h4"/><path d="M12 21V4"/><path d="M12 4h6l1.5 2.5L12 7"/><circle cx="10" cy="7" r="2.4"/><path d="M6 12h9"/><path d="M6 12l-1.5 3H4"/><circle cx="16" cy="12" r="1.6"/></svg>
+<span class="hdr-brand">Bras<span>Lâminas</span></span>
+</a>
+
+</div>
+
+<div class="hdr-center">
+
+<form class="search-box" role="search">
+<input type="search" placeholder="PROCURAR NO SITE..." aria-label="Buscar produtos" autocomplete="off">
+<button type="submit" aria-label="Buscar">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+</button>
+</form>
+
+</div>
+
+<div class="hdr-right">
+
+<a href="login.html" class="hdr-action" id="nav-auth">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+<span class="hdr-label">MEU PERFIL</span>
+</a>
+
+<a href="carrinho.html" class="hdr-action cart-link" id="nav-cart" style="display:none" aria-label="Carrinho de compras">
+<span class="hdr-cart-icon">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+<span class="cart-badge" id="cart-count">0</span>
+</span>
+<span class="hdr-label">CARRINHO</span>
+</a>
+
+</div>
 
 </div>
 
 </header>
+
+
+<nav class="main-nav" aria-label="Categorias">
+
+<div class="container main-nav-inner">
+
+<button class="nav-drop-toggle" id="nav-menu-toggle" aria-label="Navegue pela loja" aria-expanded="false">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+<span class="nav-drop-toggle-text">NAVEGUE PELA LOJA</span>
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+</button>
+
+<div class="nav-links">
+<a href="produtos.html">Anatomia</a>
+<a href="produtos.html?categoria=Equipamentos%20de%20laborat%C3%B3rio">Equipamentos de laboratório</a>
+<a href="produtos.html">Microscópios</a>
+<a href="produtos.html?categoria=L%C3%A2minas">Lâminas</a>
+<a href="produtos.html?categoria=Acess%C3%B3rios">Acessórios</a>
+<a href="admin.html" id="nav-admin" style="display:none">Admin</a>
+</div>
+
+</div>
+
+<div class="nav-dropdown" id="nav-dropdown" hidden>
+
+<div class="container nav-dropdown-inner" id="nav-dropdown-list"></div>
+
+</div>
+
+</nav>
 
 
 <section class="page">
@@ -189,6 +257,26 @@ Qualidade e precisão em lâminas, lamínulas e insumos para microscopia.
 </div>
 
 </footer>
+
+
+<a class="whatsapp-float" href="https://wa.me/551140028922?text=Ol%C3%A1%2C%20quero%20comprar%20pela%20BrasL%C3%A2minas" target="_blank" rel="noopener" aria-label="Falar no WhatsApp">
+<svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.47 14.38c-.3-.15-1.77-.87-2.04-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.64.07-.3-.15-1.26-.46-2.4-1.48-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.61.14-.13.3-.35.45-.52.15-.18.2-.3.3-.5.1-.2.05-.38-.02-.53-.08-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.5 0 1.47 1.07 2.89 1.22 3.09.15.2 2.1 3.21 5.1 4.5.71.31 1.27.49 1.7.63.72.23 1.37.2 1.88.12.58-.09 1.77-.72 2.02-1.42.25-.7.25-1.3.17-1.42-.07-.13-.27-.2-.57-.35M12.05 21.79h-.01a9.8 9.8 0 0 1-5-1.37l-.36-.21-3.72.97.99-3.62-.23-.37a9.79 9.79 0 0 1-1.5-5.22c0-5.42 4.41-9.83 9.84-9.83 2.63 0 5.1 1.02 6.95 2.88a9.77 9.77 0 0 1 2.88 6.96c0 5.41-4.42 9.82-9.84 9.82m8.4-18.24A11.78 11.78 0 0 0 12.04 0C5.46 0 .12 5.33.12 11.9c0 2.1.55 4.14 1.6 5.95L.03 24l6.31-1.65a11.9 11.9 0 0 0 5.7 1.45c6.57 0 11.92-5.34 11.92-11.91 0-3.18-1.24-6.17-3.5-8.42"/></svg>
+</a>
+
+<div class="cart-widget" id="cart-widget">
+
+<button class="cart-widget-toggle" id="cart-widget-toggle" aria-expanded="false">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+<span id="cart-widget-text">0 ITEM(S) NO CARRINHO</span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+</button>
+
+<div class="cart-widget-panel" id="cart-widget-panel" hidden>
+<div id="cart-widget-list"></div>
+<button class="btn btn-green" id="cart-widget-checkout" type="button">FINALIZAR COMPRA</button>
+</div>
+
+</div>
 
 
 <button id="back-top" aria-label="Voltar ao topo">↑</button>

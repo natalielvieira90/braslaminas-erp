@@ -1,43 +1,206 @@
-/* ============ MOBILE MENU + TABLET/MOBILE ============ */
+/* ============================================================
+   RESPONSIVIDADE — HEADER/MENU (TODAS AS PÁGINAS)
+   ============================================================ */
+
+@media (max-width: 1024px) {
+    .hdr {
+        gap: 22px;
+    }
+
+    .hdr-right {
+        gap: 18px;
+    }
+}
 
 @media (max-width: 900px) {
-    .nav-toggle {
+    .topbar-inner {
+        justify-content: center;
+        gap: 14px;
+    }
+
+    .hdr {
+        grid-template-columns: 1fr auto;
+        gap: 14px;
+        min-height: 0;
+        padding: 12px 0;
+    }
+
+    .hdr-center {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+
+    .search-box {
+        max-width: none;
+    }
+
+    .hdr-logo svg {
+        width: 34px;
+        height: 34px;
+    }
+
+    .hdr-brand {
+        font-size: 22px;
+    }
+
+    .main-nav-inner {
+        flex-wrap: wrap;
+    }
+
+    .nav-drop-toggle {
+        height: 46px;
+        padding: 0 16px;
+        margin-right: 0;
+    }
+
+    .nav-drop-toggle-text {
+        display: none;
+    }
+
+    .nav-drop-toggle svg:last-child {
+        display: none;
+    }
+
+    .nav-links {
+        display: none;
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        padding: 6px 0 10px;
+    }
+
+    .main-nav.open .nav-links {
         display: flex;
     }
 
-    nav {
-        position: absolute;
-        top: var(--cabecalho-altura);
-        left: 0;
-        right: 0;
-        background: var(--azul-escuro);
-        flex-direction: column;
-        align-items: stretch;
-        padding: 10px 6%;
-        gap: 2px;
-        box-shadow: var(--sombra-cabecalho);
-        max-height: 0;
-        overflow: hidden;
-        opacity: 0;
-        transition: max-height 0.35s ease, opacity 0.25s ease;
+    .main-nav .nav-links a {
+        padding: 12px 16px;
+        font-size: 15px;
+        border-radius: var(--borda-radius-pequeno);
     }
 
-    nav.open {
-        max-height: 460px;
-        opacity: 1;
-    }
-
-    nav a {
-        margin: 0;
-        padding: 12px 14px;
-        font-size: 16px;
-    }
-
-    .cart-badge {
-        position: static;
-        margin-left: 8px;
+    .nav-dropdown-inner {
+        justify-content: center;
     }
 }
+
+@media (max-width: 600px) {
+    .topbar-link:not(.topbar-cta) {
+        display: none;
+    }
+
+    .hdr-right {
+        gap: 14px;
+    }
+
+    .hdr-action svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .hdr-label {
+        font-size: 10px;
+    }
+
+    .whatsapp-float {
+        width: 52px;
+        height: 52px;
+        right: 14px;
+        bottom: 14px;
+    }
+
+    #back-top {
+        bottom: 84px;
+        right: 16px;
+    }
+
+    .cart-widget {
+        left: 12px;
+        bottom: 14px;
+    }
+
+    .cart-widget-bar {
+        padding: 10px 14px;
+        font-size: 11px;
+    }
+}
+
+/* ============================================================
+   RESPONSIVIDADE — HOME (SLIDER / GRADE)
+   ============================================================ */
+
+@media (max-width: 1024px) {
+    body.home .home-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    body.home .slide-text h2 {
+        font-size: 32px;
+    }
+}
+
+@media (max-width: 600px) {
+    body.home .home-grid {
+        grid-template-columns: 1fr;
+    }
+
+    body.home .slide-inner {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 30px 0 96px;
+    }
+
+    body.home .slide-img {
+        position: absolute;
+        right: 8px;
+        bottom: 42px;
+        opacity: 0.22;
+        max-width: 230px;
+    }
+
+    body.home .slide-text h2 {
+        font-size: 27px;
+    }
+
+    body.home .slide-features {
+        grid-template-columns: 1fr;
+    }
+
+    body.home .slide-cards {
+        bottom: 12px;
+    }
+
+    body.home .slide-cards-row {
+        flex-wrap: wrap;
+    }
+
+    body.home .mini-card {
+        flex: 1 1 100%;
+        max-width: 260px;
+    }
+
+    body.home .slider-prev {
+        left: 10px;
+    }
+
+    body.home .slider-next {
+        right: 10px;
+    }
+
+    body.home .slider-btn {
+        width: 40px;
+        height: 40px;
+    }
+
+    body.home .slider-dots {
+        bottom: 84px;
+    }
+}
+
+/* ============================================================
+   PÁGINAS INTERNAS — TABLET/MOBILE
+   ============================================================ */
 
 @media (max-width: 768px) {
     .banner {
@@ -92,6 +255,58 @@
     }
 
     .page {
-        padding-top: calc(var(--cabecalho-altura) + 30px);
+        padding-top: 40px;
+    }
+}
+
+@media (max-width: 900px) {
+    .admin-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-nav {
+        position: static;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .admin-nav button {
+        width: auto;
+        flex: 1;
+        min-width: 120px;
+        text-align: center;
+    }
+
+    .admin-cols {
+        grid-template-columns: 1fr;
+    }
+
+    .checkout-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-grid-3 {
+        grid-template-columns: 1fr;
+    }
+
+    .form-grid-3-span-2 {
+        grid-column: span 1;
+    }
+
+    .admin-section-head {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .admin-filters input,
+    .admin-filters select {
+        min-width: 0;
+        flex: 1;
     }
 }

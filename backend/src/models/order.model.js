@@ -1,21 +1,35 @@
 const pool = require("../config/db");
 
-async function create(userId, items) {
+async function create(userId, items, { paymentMethod, shippingAddress }) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
 
     const total = items.reduce((sum, i) => sum + Number(i.price) * i.quantity, 0);
 
+    const autoPaid = paymentMethod === "pix" || paymentMethod === "credit_card";
+    const initialStatus = autoPaid ? "paid" : "pending";
+    const paymentStatus = autoPaid ? "paid" : "pending";
+
     const { rows } = await client.query(
-      `INSERT INTO orders (user_id, total)
-       VALUES ($1, $2)
-       RETURNING id, user_id, total, status, created_at`,
-      [userId, total]
+      `INSERT INTO orders (user_id, total, status, payment_method, payment_status, shipping_address)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, user_id, total, status, payment_method, payment_status,
+                 shipping_address, tracking_code, created_at`,
+      [userId, total, initialStatus, paymentMethod || null, paymentStatus, shippingAddress || null]
     );
     const order = rows[0];
 
     for (const item of items) {
+      const stock = await client.query(
+        `SELECT stock FROM products WHERE id = $1 FOR UPDATE`,
+        [item.product_id]
+      );
+      if (!stock.rows[0] || stock.rows[0].stock < item.quantity) {
+        throw Object.assign(new Error(`Estoque insuficiente para "${item.name}".`), {
+          status: 400,
+        });
+      }
       await client.query(
         `INSERT INTO order_items (order_id, product_id, name, price, quantity)
          VALUES ($1, $2, $3, $4, $5)`,
@@ -41,7 +55,7 @@ async function create(userId, items) {
 
 async function listByUser(userId) {
   const { rows } = await pool.query(
-    `SELECT id, total, status, created_at
+    `SELECT id, total, status, payment_method, payment_status, tracking_code, created_at
      FROM orders
      WHERE user_id = $1
      ORDER BY created_at DESC`,
@@ -52,7 +66,8 @@ async function listByUser(userId) {
 
 async function findById(orderId) {
   const { rows } = await pool.query(
-    `SELECT id, user_id, total, status, created_at
+    `SELECT id, user_id, total, status, payment_method, payment_status,
+            shipping_address, tracking_code, created_at, updated_at
      FROM orders
      WHERE id = $1`,
     [orderId]
@@ -70,4 +85,91 @@ async function itemsByOrder(orderId) {
   return rows;
 }
 
-module.exports = { create, listByUser, findById, itemsByOrder };
+async function listAdmin({ status, search, limit = 100, offset = 0 }) {
+  const conditions = [];
+  const params = [];
+
+  if (status) {
+    params.push(status);
+    conditions.push(`o.status = $${params.length}`);
+  }
+  if (search) {
+    params.push(`%${search}%`);
+    conditions.push(
+      `(u.name ILIKE $${params.length} OR u.email ILIKE $${params.length} OR o.id::text ILIKE $${params.length})`
+    );
+  }
+
+  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+  params.push(limit, offset);
+
+  const { rows } = await pool.query(
+    `SELECT o.id, o.user_id, o.total, o.status, o.payment_method, o.payment_status,
+            o.tracking_code, o.created_at,
+            u.name AS customer_name, u.email AS customer_email
+     FROM orders o
+     JOIN users u ON u.id = o.user_id
+     ${where}
+     ORDER BY o.created_at DESC
+     LIMIT $${params.length - 1} OFFSET $${params.length}`,
+    params
+  );
+  return rows;
+}
+
+async function updateStatus(orderId, status) {
+  const { rows } = await pool.query(
+    `UPDATE orders SET status = $1, updated_at = now()
+     WHERE id = $2
+     RETURNING *`,
+    [status, orderId]
+  );
+  return rows[0];
+}
+
+async function updatePaymentStatus(orderId, paymentStatus) {
+  const { rows } = await pool.query(
+    `UPDATE orders SET payment_status = $1, updated_at = now()
+     WHERE id = $2
+     RETURNING *`,
+    [paymentStatus, orderId]
+  );
+  return rows[0];
+}
+
+async function updateTracking(orderId, trackingCode) {
+  const { rows } = await pool.query(
+    `UPDATE orders SET tracking_code = $1, updated_at = now()
+     WHERE id = $2
+     RETURNING *`,
+    [trackingCode, orderId]
+  );
+  return rows[0];
+}
+
+async function countByStatus({ from, to }) {
+  const conditions = [
+    "created_at >= COALESCE($1::timestamptz, '1970-01-01')",
+    "created_at <= COALESCE($2::timestamptz, now())",
+  ];
+  const { rows } = await pool.query(
+    `SELECT status, COUNT(*)::int AS total
+     FROM orders
+     WHERE ${conditions.join(" AND ")}
+     GROUP BY status`,
+    [from || null, to || null]
+  );
+  return rows;
+}
+
+module.exports = {
+  create,
+  listByUser,
+  findById,
+  itemsByOrder,
+  listAdmin,
+  updateStatus,
+  updatePaymentStatus,
+  updateTracking,
+  countByStatus,
+};

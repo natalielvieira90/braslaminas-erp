@@ -72,18 +72,36 @@ async function runSeed() {
       ["Administrador", "admin@braslaminas.com.br", adminPassword]
     );
 
-    for (const p of products) {
+    const categories = [...new Set(products.map((p) => p.category))];
+    for (const name of categories) {
+      const slug = name
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
       await client.query(
-        `INSERT INTO products (name, slug, description, price, stock, category, image_url)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
+        `INSERT INTO categories (name, slug)
+         VALUES ($1, $2)
+         ON CONFLICT (name) DO NOTHING`,
+        [name, slug]
+      );
+    }
+
+    for (const p of products) {
+      const cat = await client.query(`SELECT id FROM categories WHERE name = $1`, [p.category]);
+      await client.query(
+        `INSERT INTO products (name, slug, description, price, stock, category, image_url, category_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
          ON CONFLICT (slug) DO UPDATE SET
            name = EXCLUDED.name,
            description = EXCLUDED.description,
            price = EXCLUDED.price,
            stock = EXCLUDED.stock,
            category = EXCLUDED.category,
-           image_url = EXCLUDED.image_url`,
-        [p.name, p.slug, p.description, p.price, p.stock, p.category, p.image_url]
+           image_url = EXCLUDED.image_url,
+           category_id = EXCLUDED.category_id`,
+        [p.name, p.slug, p.description, p.price, p.stock, p.category, p.image_url, cat.rows[0] ? cat.rows[0].id : null]
       );
     }
 

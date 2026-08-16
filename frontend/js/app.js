@@ -2,17 +2,27 @@ function renderNavAuth() {
   const navAuth = document.getElementById("nav-auth");
   if (!navAuth) return;
 
+  const label = navAuth.querySelector(".hdr-label");
+
   if (API.isAuthenticated()) {
     const user = API.getUser();
     const name = user ? user.name.split(" ")[0] : "Cliente";
-    navAuth.textContent = `Sair (${name})`;
+    if (label) {
+      label.textContent = `OLÁ, ${name.toUpperCase()}`;
+    } else {
+      navAuth.textContent = `Sair (${name})`;
+    }
     navAuth.onclick = (e) => {
       e.preventDefault();
       API.logout();
       window.location.reload();
     };
   } else {
-    navAuth.textContent = "Login";
+    if (label) {
+      label.textContent = "MEU PERFIL";
+    } else {
+      navAuth.textContent = "Login";
+    }
     navAuth.onclick = null;
   }
 
@@ -72,12 +82,16 @@ function toast(message, type = "info", duration = 2600) {
 
 async function updateCartBadge() {
   const badge = document.getElementById("cart-count");
+  const cartLink = document.getElementById("nav-cart");
   if (!badge) return;
 
   if (!API.isAuthenticated()) {
     badge.classList.remove("visible");
+    if (cartLink) cartLink.style.display = "none";
     return;
   }
+
+  if (cartLink) cartLink.style.display = "inline-flex";
 
   try {
     const { items } = await API.get("/cart");
@@ -127,10 +141,131 @@ function initReveal() {
   document.querySelectorAll(".reveal").forEach((el) => observer.observe(el));
 }
 
+const IS_IN_PAGES = window.location.pathname.includes("/pages/");
+
+function rel(file) {
+  return IS_IN_PAGES ? file : `pages/${file}`;
+}
+
+function initSiteSearch() {
+  document.querySelectorAll("form.search-box").forEach((form) => {
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const input = form.querySelector("input[type='search']");
+      const term = (input && input.value.trim()) || "";
+      window.location.href = term
+        ? `${rel("produtos.html")}?busca=${encodeURIComponent(term)}`
+        : rel("produtos.html");
+    });
+  });
+}
+
+async function loadDropdownCategories() {
+  const list = document.getElementById("nav-dropdown-list");
+  if (!list) return;
+
+  try {
+    const { products } = await API.get("/products?limit=100");
+    const categories = [...new Set(products.map((p) => p.category).filter(Boolean))];
+    list.innerHTML =
+      `<a href="${rel("produtos.html")}">Todos os produtos</a>` +
+      categories
+        .map((c) => `<a href="${rel("produtos.html")}?categoria=${encodeURIComponent(c)}">${c}</a>`)
+        .join("");
+  } catch {
+    list.innerHTML = `<a href="${rel("produtos.html")}">Ver todos os produtos</a>`;
+  }
+}
+
+function initMenuDropdown() {
+  const toggle = document.getElementById("nav-menu-toggle");
+  const nav = document.querySelector(".main-nav");
+  const dropdown = document.getElementById("nav-dropdown");
+  if (!toggle || !nav || !dropdown) return;
+
+  toggle.addEventListener("click", () => {
+    const open = nav.classList.toggle("open");
+    toggle.classList.toggle("open", open);
+    toggle.setAttribute("aria-expanded", String(open));
+    dropdown.hidden = !open;
+  });
+
+  loadDropdownCategories();
+
+  document.addEventListener("click", (e) => {
+    if (!nav.contains(e.target)) {
+      nav.classList.remove("open");
+      toggle.classList.remove("open");
+      toggle.setAttribute("aria-expanded", "false");
+      dropdown.hidden = true;
+    }
+  });
+}
+
+function initCartWidget() {
+  const widget = document.getElementById("cart-widget");
+  const toggle = document.getElementById("cart-widget-toggle");
+  const panel = document.getElementById("cart-widget-panel");
+  const text = document.getElementById("cart-widget-text");
+  if (!widget || !toggle || !panel || !text) return;
+
+  const render = async () => {
+    if (!API.isAuthenticated()) {
+      text.textContent = "0 ITEM(S) NO CARRINHO";
+      panel.innerHTML = `<p>Entre para ver o seu carrinho.</p>
+        <a class="btn" href="${rel("login.html")}">ENTRAR</a>`;
+      return;
+    }
+
+    try {
+      const { items } = await API.get("/cart");
+      const count = items.reduce((s, i) => s + i.quantity, 0);
+      const total = items.reduce((s, i) => s + i.price * i.quantity, 0);
+      text.textContent = `${count} ITEM(S) NO CARRINHO`;
+
+      if (count > 0) {
+        panel.innerHTML = `
+          <ul class="cart-widget-list">
+            ${items
+              .map(
+                (i) => `
+              <li>
+                <span class="cart-widget-item-name">${i.name} × ${i.quantity}</span>
+                <b>${money(i.price * i.quantity)}</b>
+              </li>
+            `
+              )
+              .join("")}
+          </ul>
+          <p class="cart-widget-total">Total: <b>${money(total)}</b></p>
+          <a class="btn" href="${rel("carrinho.html")}">VER CARRINHO</a>
+        `;
+      } else {
+        panel.innerHTML = `<p>Seu carrinho está vazio.</p>
+          <a class="btn" href="${rel("produtos.html")}">VER PRODUTOS</a>`;
+      }
+    } catch {
+      text.textContent = "0 ITEM(S) NO CARRINHO";
+    }
+  };
+
+  toggle.addEventListener("click", () => {
+    const open = widget.classList.toggle("open");
+    toggle.setAttribute("aria-expanded", String(open));
+    panel.hidden = !open;
+    if (open) render();
+  });
+
+  render();
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   renderNavAuth();
   updateCartBadge();
   initMobileMenu();
   initBackToTop();
   initReveal();
+  initSiteSearch();
+  initMenuDropdown();
+  initCartWidget();
 });

@@ -9,9 +9,25 @@ const STATUS_LABEL = {
   cancelled: "Cancelado",
 };
 
+const PAYMENT_METHOD = {
+  pix: "PIX",
+  credit_card: "Cartão",
+  boleto: "Boleto",
+};
+
+const PAYMENT_STATUS_LABEL = {
+  pending: "Aguardando",
+  paid: "Pago",
+  refunded: "Estornado",
+};
+
 function formatDate(value) {
   const d = new Date(value);
   return d.toLocaleDateString("pt-BR") + " " + d.toLocaleTimeString("pt-BR");
+}
+
+function formatShortDate(value) {
+  return new Date(value).toLocaleDateString("pt-BR");
 }
 
 function requireLogin() {
@@ -30,6 +46,10 @@ function requireLogin() {
 
 function statusChip(status) {
   return `<span class="status-chip status-${status}">${STATUS_LABEL[status] || status}</span>`;
+}
+
+function payChip(status) {
+  return `<span class="status-chip status-${status}">${PAYMENT_STATUS_LABEL[status] || status}</span>`;
 }
 
 function renderOrders(orders) {
@@ -52,6 +72,7 @@ function renderOrders(orders) {
           <tr>
             <th>Pedido</th>
             <th>Data</th>
+            <th>Pagamento</th>
             <th>Status</th>
             <th>Total</th>
             <th></th>
@@ -64,6 +85,7 @@ function renderOrders(orders) {
             <tr>
               <td><strong>#${o.id.slice(0, 8)}</strong></td>
               <td>${formatDate(o.created_at)}</td>
+              <td>${PAYMENT_METHOD[o.payment_method] || "-"} · ${payChip(o.payment_status)}</td>
               <td>${statusChip(o.status)}</td>
               <td>${money(o.total)}</td>
               <td><button class="link" data-order="${o.id}">Ver itens</button></td>
@@ -81,9 +103,41 @@ function renderOrders(orders) {
   );
 }
 
+function paymentBlockHtml(payment) {
+  if (!payment) return "<p class='admin-muted'>Sem pagamento registrado.</p>";
+  const d = payment.details || {};
+  let info = "";
+
+  if (payment.method === "pix" && d.pix_code) {
+    info = `
+      <div class="code-box">
+        <small>PIX Copia e Cola</small>
+        <code id="pay-code">${d.pix_code}</code>
+      </div>
+      <button class="btn" id="btn-copiar">Copiar código PIX</button>
+    `;
+  } else if (payment.method === "boleto" && d.barcode) {
+    info = `
+      <div class="code-box">
+        <small>Linha digitável do boleto (vence ${formatShortDate(d.due_date)})</small>
+        <code id="pay-code">${d.barcode}</code>
+      </div>
+      <button class="btn" id="btn-copiar">Copiar linha digitável</button>
+    `;
+  } else if (payment.method === "credit_card") {
+    info = `<p class="admin-info">Cartão •••• ${d.card_last4 || ""} · Autorização ${payment.transaction_code || "-"}</p>`;
+  }
+
+  return `
+    <p class="admin-info"><b>Método:</b> ${PAYMENT_METHOD[payment.method] || payment.method}</p>
+    <p class="admin-info"><b>Situação do pagamento:</b> ${payChip(payment.status)}</p>
+    ${info}
+  `;
+}
+
 async function showOrder(orderId) {
   try {
-    const { order, items } = await API.get(`/orders/${orderId}`);
+    const { order, items, payment } = await API.get(`/orders/${orderId}`);
     const rows = items
       .map(
         (i) => `
@@ -112,11 +166,30 @@ async function showOrder(orderId) {
         <strong>${money(order.total)}</strong>
       </div>
       <br>
+      <div class="form-card" style="margin-bottom:24px">
+        <h3>Pagamento e entrega</h3>
+        ${paymentBlockHtml(payment)}
+        ${order.shipping_address ? `<p class="admin-info" style="margin-top:10px"><b>Endereço de entrega:</b> ${escapeHtml(order.shipping_address)}</p>` : ""}
+        ${order.tracking_code ? `<p class="admin-info" style="margin-top:10px"><b>Código de rastreio:</b> ${escapeHtml(order.tracking_code)}</p>` : ""}
+      </div>
       <a class="btn btn-outline" href="pedidos.html">&larr; Voltar para meus pedidos</a>
     `;
+
+    document.getElementById("btn-copiar")?.addEventListener("click", () => {
+      const text = document.getElementById("pay-code").textContent;
+      navigator.clipboard.writeText(text).then(() => toast("Código copiado!", "success"));
+    });
   } catch (err) {
     showMessage(mensagem, err.message);
   }
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 async function loadOrders() {
