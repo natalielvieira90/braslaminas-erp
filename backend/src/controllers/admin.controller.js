@@ -234,6 +234,50 @@ async function listProducts(req, res) {
   res.json({ products });
 }
 
+async function showProduct(req, res) {
+  const product = await productModel.findById(req.params.id);
+  if (!product) {
+    return res.status(404).json({ error: "Produto não encontrado." });
+  }
+  const images = await productModel.listImages(product.id);
+  res.json({ product, images });
+}
+
+async function addProductImage(req, res) {
+  const product = await productModel.findById(req.params.id);
+  if (!product) {
+    return res.status(404).json({ error: "Produto não encontrado." });
+  }
+  const { image_url, sort_order } = req.body;
+  if (!image_url) {
+    return res.status(400).json({ error: "URL da imagem é obrigatória." });
+  }
+  const image = await productModel.addImage(product.id, image_url, sort_order ?? 0);
+  res.status(201).json({ image });
+}
+
+async function reorderProductImages(req, res) {
+  const product = await productModel.findById(req.params.id);
+  if (!product) {
+    return res.status(404).json({ error: "Produto não encontrado." });
+  }
+  const { image_ids } = req.body;
+  if (!Array.isArray(image_ids)) {
+    return res.status(400).json({ error: "image_ids deve ser um array." });
+  }
+  await productModel.reorderImages(product.id, image_ids);
+  const images = await productModel.listImages(product.id);
+  res.json({ images });
+}
+
+async function removeProductImage(req, res) {
+  const removed = await productModel.removeImage(req.params.imageId);
+  if (!removed) {
+    return res.status(404).json({ error: "Imagem não encontrada." });
+  }
+  res.status(204).end();
+}
+
 module.exports = {
   dashboard,
   listOrders,
@@ -253,4 +297,8 @@ module.exports = {
   listContact,
   removeContact,
   listProducts,
+  showProduct,
+  addProductImage,
+  reorderProductImages,
+  removeProductImage,
 };

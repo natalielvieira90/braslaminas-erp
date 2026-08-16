@@ -41,6 +41,7 @@ app.use("/api/health", (req, res) => {
     appMode: config.appMode,
     paymentProvider: config.paymentProvider,
     shippingProvider: config.shippingProvider,
+    googleClientId: process.env.GOOGLE_CLIENT_ID || null,
   });
 });
 

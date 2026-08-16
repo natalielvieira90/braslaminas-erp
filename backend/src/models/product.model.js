@@ -104,4 +104,45 @@ async function remove(id) {
   await pool.query(`DELETE FROM products WHERE id = $1`, [id]);
 }
 
-module.exports = { list, findBySlug, findById, create, update, remove };
+async function listImages(productId) {
+  const { rows } = await pool.query(
+    `SELECT id, image_url, sort_order FROM product_images WHERE product_id = $1 ORDER BY sort_order`,
+    [productId]
+  );
+  return rows;
+}
+
+async function addImage(productId, imageUrl, sortOrder = 0) {
+  const { rows } = await pool.query(
+    `INSERT INTO product_images (product_id, image_url, sort_order) VALUES ($1, $2, $3)
+     RETURNING id, image_url, sort_order`,
+    [productId, imageUrl, sortOrder]
+  );
+  return rows[0];
+}
+
+async function removeImage(id) {
+  const { rowCount } = await pool.query(`DELETE FROM product_images WHERE id = $1`, [id]);
+  return rowCount > 0;
+}
+
+async function reorderImages(productId, imageIds) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    for (let i = 0; i < imageIds.length; i++) {
+      await client.query(
+        `UPDATE product_images SET sort_order = $1 WHERE id = $2 AND product_id = $3`,
+        [i, imageIds[i], productId]
+      );
+    }
+    await client.query("COMMIT");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+module.exports = { list, findBySlug, findById, create, update, remove, listImages, addImage, removeImage, reorderImages };

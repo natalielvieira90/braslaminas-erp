@@ -1,14 +1,31 @@
 const conteudo = document.getElementById("produto-conteudo");
 
-function productDetail(product) {
-  const image = product.image_url || "/images/produtos/placeholder.svg";
+let currentImageIndex = 0;
+let allImages = [];
+
+function productDetail(product, images) {
+  const mainImage = product.image_url || "/images/produtos/placeholder.svg";
+  allImages = [mainImage, ...images.map((i) => i.image_url)];
+  currentImageIndex = 0;
   const available = product.stock > 0;
 
   return `
     <div class="detail">
       <div class="detail-img">
-        <img src="${image}" alt="${product.name}"
-             onerror="this.src='/images/produtos/placeholder.svg'">
+        <div class="gallery">
+          <img id="gallery-main" src="${mainImage}" alt="${product.name}"
+               onerror="this.src='/images/produtos/placeholder.svg'"
+               style="max-height:340px;border-radius:14px;object-fit:contain">
+          ${allImages.length > 1
+            ? `<div class="gallery-thumbs" style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+                ${allImages.map((img, i) => `
+                  <img src="${img}" class="gallery-thumb ${i === 0 ? "active" : ""}"
+                       data-idx="${i}"
+                       style="width:56px;height:56px;object-fit:cover;border-radius:8px;border:2px solid ${i === 0 ? "var(--azul)" : "#ddd"};cursor:pointer">
+                `).join("")}
+              </div>`
+            : ""}
+        </div>
       </div>
       <div class="detail-info">
         <h2>${product.name}</h2>
@@ -63,13 +80,31 @@ async function loadProduct() {
   `;
 
   try {
-    const { product } = await API.get(`/products/${slug}`);
-    conteudo.innerHTML = productDetail(product);
+    const { product, images } = await API.get(`/products/${slug}`);
+    conteudo.innerHTML = productDetail(product, images);
     bindQty();
+    bindGallery();
     initAddToCart();
   } catch (err) {
     conteudo.innerHTML = `<p>${err.message}</p>`;
   }
+}
+
+function bindGallery() {
+  const thumbs = document.querySelectorAll(".gallery-thumb");
+  if (!thumbs.length) return;
+
+  thumbs.forEach((thumb) => {
+    thumb.addEventListener("click", () => {
+      const idx = parseInt(thumb.dataset.idx, 10);
+      document.getElementById("gallery-main").src = allImages[idx];
+      currentImageIndex = idx;
+      thumbs.forEach((t, i) => {
+        t.style.borderColor = i === idx ? "var(--azul)" : "#ddd";
+        t.classList.toggle("active", i === idx);
+      });
+    });
+  });
 }
 
 function bindQty() {

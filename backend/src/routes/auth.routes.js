@@ -28,4 +28,6 @@ router.post(
 
 router.get("/me", requireAuth, asyncHandler(authController.me));
 
+router.post("/google", asyncHandler(authController.googleLogin));
+
 module.exports = router;

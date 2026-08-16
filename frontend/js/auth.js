@@ -74,10 +74,51 @@ formRegister.addEventListener("submit", async (e) => {
   }
 });
 
+async function handleGoogleCredential(response) {
+  mensagem.className = "";
+  mensagem.textContent = "";
+  try {
+    const data = await API.post("/auth/google", { id_token: response.credential });
+    API.setToken(data.token);
+    API.setUser(data.user);
+    showMessage(mensagem, "Login com Google realizado!", "success");
+    setTimeout(() => {
+      window.location.href = "../index.html";
+    }, 1000);
+  } catch (err) {
+    showMessage(mensagem, err.message);
+  }
+}
+
+function initGoogleSignIn(clientId) {
+  if (typeof google === "undefined" || !google.accounts) return;
+
+  google.accounts.id.initialize({
+    client_id: clientId,
+    callback: handleGoogleCredential,
+  });
+
+  google.accounts.id.renderButton(
+    document.getElementById("google-signin-btn"),
+    { theme: "outline", size: "large", width: "100%", text: "continue_with", shape: "rectangular" }
+  );
+
+  document.getElementById("google-section").style.display = "block";
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   setActiveTab("login");
   if (API.isAuthenticated()) {
     document.getElementById("btn-login").textContent = "Já está logado";
     document.getElementById("btn-login").disabled = true;
   }
+
+  fetch("/api/health")
+    .then((r) => r.json())
+    .then((h) => {
+      if (h.googleClientId) {
+        initGoogleSignIn(h.googleClientId);
+      }
+    })
+    .catch(() => {});
 });

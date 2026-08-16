@@ -24,7 +24,8 @@ async function show(req, res) {
   if (!product) {
     return res.status(404).json({ error: "Produto não encontrado." });
   }
-  res.json({ product });
+  const images = await productModel.listImages(product.id);
+  res.json({ product, images });
 }
 
 async function create(req, res) {

@@ -833,7 +833,7 @@ async function openForm(product = null) {
         </select>
       </div>
       <div class="form-group">
-        <label>Imagem</label>
+        <label>Imagem principal</label>
         <input type="file" id="f-imagem" accept="image/*">
         <input type="hidden" id="f-imagem-url" value="${escapeHtml(product ? product.image_url || "" : "")}">
         <div style="margin-top:10px">
@@ -846,6 +846,8 @@ async function openForm(product = null) {
         <button class="btn btn-outline" id="btn-cancelar">Cancelar</button>
       </div>
     </div>
+
+    ${product ? `<div id="additional-images-section"></div>` : ""}
   `;
 
   const fileInput = document.getElementById("f-imagem");
@@ -867,6 +869,88 @@ async function openForm(product = null) {
   });
 
   document.getElementById("btn-salvar").addEventListener("click", () => saveProduct(product));
+
+  if (product) {
+    loadAdditionalImages(product.id);
+  }
+}
+
+async function loadAdditionalImages(productId) {
+  const section = document.getElementById("additional-images-section");
+  if (!section) return;
+
+  try {
+    const { images } = await API.get(`/admin/products/${productId}`);
+    section.innerHTML = `
+      <div class="form-card admin-form" style="margin-top:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h3>Imagens adicionais (${images.length})</h3>
+          <label class="btn btn-outline" style="cursor:pointer">
+            + Adicionar imagem
+            <input type="file" id="f-add-image" accept="image/*" style="display:none">
+          </label>
+        </div>
+        ${images.length
+          ? `<div style="display:flex;flex-wrap:wrap;gap:10px" id="images-grid">
+              ${images.map((img, i) => `
+                <div style="position:relative;border:1px solid #ddd;border-radius:8px;overflow:hidden" data-img-id="${img.id}">
+                  <img src="${escapeHtml(img.image_url)}" style="width:90px;height:90px;object-fit:cover;display:block">
+                  <div style="display:flex;border-top:1px solid #ddd">
+                    <button class="img-move" data-dir="up" data-idx="${i}" ${i === 0 ? "disabled" : ""} style="flex:1;border:none;background:none;padding:4px;cursor:pointer;font-size:11px">◀</button>
+                    <button class="img-move" data-dir="down" data-idx="${i}" ${i === images.length - 1 ? "disabled" : ""} style="flex:1;border:none;background:none;padding:4px;cursor:pointer;font-size:11px">▶</button>
+                    <button class="img-del" data-id="${img.id}" style="flex:1;border:none;background:none;padding:4px;cursor:pointer;color:#e53e3e;font-size:11px">✕</button>
+                  </div>
+                </div>
+              `).join("")}
+            </div>`
+          : '<p style="color:#888">Nenhuma imagem adicional ainda.</p>'}
+      </div>
+    `;
+
+    document.getElementById("f-add-image").addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        const { url } = await API.uploadImage(file);
+        await API.post(`/admin/products/${productId}/images`, { image_url: url });
+        toast("Imagem adicionada", "success");
+        loadAdditionalImages(productId);
+      } catch (err) {
+        toast(err.message, "error");
+      }
+    });
+
+    section.querySelectorAll(".img-del").forEach((btn) =>
+      btn.addEventListener("click", async () => {
+        if (!confirm("Remover esta imagem?")) return;
+        try {
+          await API.del(`/admin/products/images/${btn.dataset.id}`);
+          toast("Imagem removida", "success");
+          loadAdditionalImages(productId);
+        } catch (err) {
+          toast(err.message, "error");
+        }
+      })
+    );
+
+    section.querySelectorAll(".img-move").forEach((btn) =>
+      btn.addEventListener("click", async () => {
+        const allIds = Array.from(section.querySelectorAll("[data-img-id]")).map((el) => el.dataset.imgId);
+        const idx = parseInt(btn.dataset.idx, 10);
+        const swap = btn.dataset.dir === "down" ? idx + 1 : idx - 1;
+        if (swap < 0 || swap >= allIds.length) return;
+        [allIds[idx], allIds[swap]] = [allIds[swap], allIds[idx]];
+        try {
+          await API.put(`/admin/products/${productId}/images/reorder`, { image_ids: allIds });
+          loadAdditionalImages(productId);
+        } catch (err) {
+          toast(err.message, "error");
+        }
+      })
+    );
+  } catch (err) {
+    section.innerHTML = "";
+  }
 }
 
 async function saveProduct(existing) {
@@ -888,12 +972,15 @@ async function saveProduct(existing) {
   try {
     if (existing) {
       await API.put(`/products/${existing.id}`, payload);
+      showMessage(mensagem, "Produto atualizado!", "success");
+      toast("Produto salvo", "success");
+      await renderProdutos();
     } else {
-      await API.post("/products", payload);
+      const { product } = await API.post("/products", payload);
+      showMessage(mensagem, "Produto criado! Agora você pode adicionar imagens.", "success");
+      toast("Produto salvo", "success");
+      await openForm(product);
     }
-    showMessage(mensagem, existing ? "Produto atualizado!" : "Produto criado!", "success");
-    toast("Produto salvo", "success");
-    await renderProdutos();
   } catch (err) {
     showMessage(mensagem, err.message);
   }

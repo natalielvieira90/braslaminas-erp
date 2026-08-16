@@ -45,4 +45,49 @@ async function me(req, res) {
   res.json({ user });
 }
 
-module.exports = { register, login, me };
+async function googleLogin(req, res) {
+  const { id_token } = req.body;
+  if (!id_token) {
+    return res.status(400).json({ error: "Token do Google não informado." });
+  }
+
+  let payload;
+  try {
+    const response = await fetch(
+      `https://oauth2.googleapis.com/tokeninfo?id_token=${id_token}`
+    );
+    if (!response.ok) {
+      return res.status(401).json({ error: "Token do Google inválido." });
+    }
+    payload = await response.json();
+  } catch {
+    return res.status(401).json({ error: "Falha ao validar token do Google." });
+  }
+
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  if (clientId && payload.aud !== clientId) {
+    return res.status(401).json({ error: "Client ID do Google não corresponde." });
+  }
+
+  if (!payload.email || !payload.email_verified) {
+    return res.status(401).json({ error: "E-mail do Google não verificado." });
+  }
+
+  const email = payload.email.toLowerCase();
+  let user = await userModel.findByEmail(email);
+
+  if (!user) {
+    user = await userModel.create({
+      name: payload.name || payload.given_name || email.split("@")[0],
+      email,
+    });
+  }
+
+  const { password_hash, ...safeUser } = user;
+  res.json({
+    token: signToken(safeUser),
+    user: safeUser,
+  });
+}
+
+module.exports = { register, login, me, googleLogin };

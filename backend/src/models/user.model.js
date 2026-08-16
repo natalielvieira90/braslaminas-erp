@@ -17,11 +17,12 @@ async function findByEmail(email) {
 }
 
 async function create({ name, email, passwordHash }) {
+  const hash = passwordHash || `google:${require("crypto").randomUUID()}`;
   const { rows } = await pool.query(
     `INSERT INTO users (name, email, password_hash)
      VALUES ($1, $2, $3)
      RETURNING id, name, email, role, created_at`,
-    [name, email, passwordHash]
+    [name, email, hash]
   );
   return rows[0];
 }

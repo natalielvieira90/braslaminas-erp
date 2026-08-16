@@ -8,6 +8,10 @@ router.use(requireAuth, requireAdmin);
 router.get("/dashboard", asyncHandler(adminController.dashboard));
 
 router.get("/products", asyncHandler(adminController.listProducts));
+router.get("/products/:id", asyncHandler(adminController.showProduct));
+router.post("/products/:id/images", asyncHandler(adminController.addProductImage));
+router.put("/products/:id/images/reorder", asyncHandler(adminController.reorderProductImages));
+router.delete("/products/images/:imageId", asyncHandler(adminController.removeProductImage));
 
 router.get("/orders", asyncHandler(adminController.listOrders));
 router.get("/orders/:id", asyncHandler(adminController.showOrder));
