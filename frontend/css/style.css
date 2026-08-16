@@ -761,9 +761,76 @@ section {
 
 .status-pending { background: var(--amarelo); color: #7a5510; }
 .status-paid { background: var(--verde-claro); color: #1c6b45; }
+.status-preparing { background: var(--amarelo); color: #7a5510; }
 .status-shipped { background: var(--azul-suave); color: var(--azul); }
+.status-in_transit { background: var(--azul-suave); color: var(--azul); }
+.status-out_for_delivery { background: #e5ecff; color: #3457b1; }
+.status-approved { background: var(--verde-claro); color: #1c6b45; }
+.status-rejected { background: var(--perigo-claro); color: #9b2c2c; }
 .status-delivered { background: #e9e9e9; color: #4b5563; }
 .status-cancelled { background: var(--perigo-claro); color: #9b2c2c; }
+
+/* ============ TIMELINE ============ */
+
+.timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    position: relative;
+}
+
+.timeline::before {
+    content: "";
+    position: absolute;
+    left: 7px;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: #dde4ea;
+}
+
+.timeline-item {
+    position: relative;
+    padding: 0 0 18px 28px;
+}
+
+.timeline-item:last-child {
+    padding-bottom: 0;
+}
+
+.timeline-dot {
+    position: absolute;
+    left: 2px;
+    top: 4px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--verde-claro);
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 2px var(--verde);
+}
+
+.timeline-item small {
+    color: var(--cinza);
+    display: block;
+}
+
+.timeline-item p {
+    margin: 4px 0 0;
+    font-size: 13px;
+}
+
+/* ============ FRETE / SHIPPING ============ */
+
+.shipping-option small {
+    display: block;
+    color: var(--cinza);
+    margin-top: 2px;
+}
+
+#shipping-options .pay-option {
+    margin-bottom: 8px;
+}
 
 /* ============ SKELETON ============ */
 

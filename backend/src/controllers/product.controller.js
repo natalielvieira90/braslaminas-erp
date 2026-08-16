@@ -28,7 +28,7 @@ async function show(req, res) {
 }
 
 async function create(req, res) {
-  const { name, description, price, stock, category, image_url } = req.body;
+  const { name, description, price, stock, category, image_url, weight, height, width, length } = req.body;
 
   if (!name || price == null) {
     return res.status(400).json({ error: "Nome e preço são obrigatórios." });
@@ -43,6 +43,10 @@ async function create(req, res) {
     stock: stock ?? 0,
     category,
     imageUrl: image_url,
+    weight,
+    height,
+    width,
+    length,
   });
 
   res.status(201).json({ product });

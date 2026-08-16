@@ -5,6 +5,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const { notFound, errorHandler } = require("./middleware/error");
+const config = require("./config");
 
 const authRoutes = require("./routes/auth.routes");
 const productRoutes = require("./routes/product.routes");
@@ -13,6 +14,9 @@ const orderRoutes = require("./routes/order.routes");
 const uploadRoutes = require("./routes/upload.routes");
 const contactRoutes = require("./routes/contact.routes");
 const adminRoutes = require("./routes/admin.routes");
+const cepRoutes = require("./routes/cep.routes");
+const shippingRoutes = require("./routes/shipping.routes");
+const webhookRoutes = require("./routes/webhook.routes");
 
 const app = express();
 
@@ -30,7 +34,13 @@ const apiLimiter = rateLimit({
 app.use("/api", apiLimiter);
 
 app.use("/api/health", (req, res) => {
-  res.json({ status: "ok", service: "braslaminas-api" });
+  res.json({
+    status: "ok",
+    service: "braslaminas-api",
+    appMode: config.appMode,
+    paymentProvider: config.paymentProvider,
+    shippingProvider: config.shippingProvider,
+  });
 });
 
 app.use("/api/auth", authRoutes);
@@ -40,6 +50,9 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/cep", cepRoutes);
+app.use("/api/shipping", shippingRoutes);
+app.use("/api/webhooks", webhookRoutes);
 
 const frontendDir = path.join(__dirname, "..", "..", "frontend");
 app.use(express.static(frontendDir));

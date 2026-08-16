@@ -4,7 +4,10 @@ const mensagem = document.getElementById("mensagem");
 const ORDER_STATUS = {
   pending: "Pendente",
   paid: "Pago",
+  preparing: "Preparando",
   shipped: "Enviado",
+  in_transit: "Em trânsito",
+  out_for_delivery: "Saiu p/ entrega",
   delivered: "Entregue",
   cancelled: "Cancelado",
 };
@@ -17,13 +20,35 @@ const PAYMENT_METHOD = {
 
 const PAYMENT_STATUS = {
   pending: "Aguardando",
-  paid: "Pago",
+  approved: "Aprovado",
+  rejected: "Recusado",
   refunded: "Estornado",
+  cancelled: "Cancelado",
+};
+
+const TIMELINE_LABEL = {
+  order_received: "Pedido recebido",
+  payment_approved: "Pagamento aprovado",
+  order_prepared: "Pedido preparado",
+  posted: "Objeto postado",
+  in_transit: "Em trânsito",
+  out_for_delivery: "Saiu para entrega",
+  delivered: "Entregue",
 };
 
 let currentSection = "dashboard";
 let currentProducts = [];
 let cachedCategories = [];
+let appMode = "production";
+
+async function loadAppMode() {
+  try {
+    const health = await API.get("/health");
+    appMode = health.appMode || "production";
+  } catch {
+    appMode = "production";
+  }
+}
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -457,7 +482,7 @@ async function loadOrdersList() {
 async function showOrderDetail(orderId) {
   const el = document.getElementById("sec-pedidos");
   try {
-    const { order, items, payment } = await API.get(`/admin/orders/${orderId}`);
+    const { order, items, payment, tracking } = await API.get(`/admin/orders/${orderId}`);
     const itemRows = items
       .map(
         (i) => `
@@ -472,10 +497,28 @@ async function showOrderDetail(orderId) {
       .join("");
 
     const canConfirm = payment && payment.status === "pending";
-    const canRefund = payment && payment.status === "paid";
+    const canRefund = payment && payment.status === "approved";
     const payDetails = payment
       ? paymentInfoHtml(payment)
       : "<p class='admin-muted'>Sem pagamento registrado.</p>";
+
+    const demoSimulation = isDemo()
+      ? `<div class="admin-card" style="border-color:var(--dourado)">
+          <h3 style="color:var(--dourado)">Modo demonstração</h3>
+          <div class="admin-actions" style="flex-wrap:wrap">
+            ${
+              canConfirm
+                ? `<button class="btn" data-sim="approve_payment">Simular pagamento aprovado</button>
+                   <button class="btn btn-outline" data-sim="reject_payment">Simular pagamento recusado</button>`
+                : ""
+            }
+            ${order.shipping_status === "pending" && order.payment_status === "approved" ? `<button class="btn" data-sim="ship">Simular envio</button>` : ""}
+            ${order.status === "shipped" ? `<button class="btn btn-outline" data-sim="in_transit">Em trânsito</button>` : ""}
+            ${order.status === "in_transit" ? `<button class="btn btn-outline" data-sim="out_for_delivery">Saiu p/ entrega</button>` : ""}
+            ${order.status === "out_for_delivery" ? `<button class="btn btn-outline" data-sim="delivered">Entregue</button>` : ""}
+          </div>
+        </div>`
+      : "";
 
     el.innerHTML = `
       <div class="admin-section-head">
@@ -493,8 +536,8 @@ async function showOrderDetail(orderId) {
             </table>
           </div>
           <div class="cart-total">
-            <span>Total:</span>
-            <strong>${money(order.total)}</strong>
+            <span>Subtotal: ${money(order.subtotal)} + Frete: ${money(order.shipping_cost)}</span>
+            <strong>Total: ${money(order.total)}</strong>
           </div>
         </div>
 
@@ -503,6 +546,7 @@ async function showOrderDetail(orderId) {
           <p class="admin-info"><b>Cliente:</b> ${order.customer_name || "-"}</p>
           <p class="admin-info"><b>E-mail:</b> ${order.customer_email || "-"}</p>
           <p class="admin-info"><b>Endereço:</b><br>${escapeHtml(order.shipping_address || "Não informado")}</p>
+          <p class="admin-info"><b>CEP:</b> ${order.cep || "-"} <b>Frete:</b> ${escapeHtml(order.shipping_method || "-")}</p>
           <p class="admin-info"><b>Data:</b> ${formatDate(order.created_at)}</p>
           ${order.tracking_code ? `<p class="admin-info"><b>Código de rastreio:</b> ${escapeHtml(order.tracking_code)}</p>` : ""}
         </div>
@@ -535,6 +579,13 @@ async function showOrderDetail(orderId) {
           </div>
         </div>
       </div>
+
+      ${demoSimulation}
+
+      <div class="admin-card">
+        <h3>Linha do tempo</h3>
+        ${timelineHtml(tracking, order.status)}
+      </div>
     `;
 
     document.getElementById("btn-voltar").addEventListener("click", renderPedidos);
@@ -561,6 +612,22 @@ async function showOrderDetail(orderId) {
         toast(err.message, "error");
       }
     });
+
+    document.querySelectorAll("[data-sim]").forEach((btn) =>
+      btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        btn.textContent = "Simulando...";
+        try {
+          await API.post(`/admin/orders/${order.id}/simulate`, { action: btn.dataset.sim });
+          toast("Evento simulado", "success");
+          showOrderDetail(order.id);
+        } catch (err) {
+          toast(err.message, "error");
+          btn.disabled = false;
+          btn.textContent = "Simular";
+        }
+      })
+    );
 
     const confirmBtn = document.getElementById("btn-confirmar");
     if (confirmBtn) {
@@ -591,6 +658,35 @@ async function showOrderDetail(orderId) {
   } catch (err) {
     el.innerHTML = `<p>${escapeHtml(err.message)}</p>`;
   }
+}
+
+function timelineHtml(tracking, status) {
+  const events = Array.isArray(tracking) && tracking.length ? tracking : null;
+
+  if (events) {
+    const items = events
+      .map(
+        (e) => `
+          <li class="timeline-item">
+            <span class="timeline-dot"></span>
+            <div>
+              <strong>${TIMELINE_LABEL[e.status] || e.status}</strong>
+              <small>${formatDate(e.event_date)}</small>
+              ${e.description ? `<p class="admin-muted">${escapeHtml(e.description)}</p>` : ""}
+            </div>
+          </li>
+        `
+      )
+      .join("");
+    return `<ul class="timeline">${items}</ul>`;
+  }
+
+  const current = ORDER_STATUS[status] || status;
+  return `<p class="admin-muted">Ainda sem eventos. Status atual: ${current}.</p>`;
+}
+
+function isDemo() {
+  return appMode === "demo";
 }
 
 function paymentInfoHtml(payment) {
@@ -1062,9 +1158,10 @@ async function renderMensagens() {
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   renderNavAuth();
   if (requireAdminAccess()) {
+    await loadAppMode();
     renderAdmin();
   }
 });

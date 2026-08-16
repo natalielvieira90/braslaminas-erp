@@ -15,6 +15,7 @@ router.put("/orders/:id/status", asyncHandler(adminController.updateStatus));
 router.put("/orders/:id/tracking", asyncHandler(adminController.updateTracking));
 router.post("/orders/:id/confirm-payment", asyncHandler(adminController.confirmPayment));
 router.post("/orders/:id/refund", asyncHandler(adminController.refundPayment));
+router.post("/orders/:id/simulate", asyncHandler(adminController.simulate));
 
 router.get("/categories", asyncHandler(adminController.listCategories));
 router.post("/categories", asyncHandler(adminController.createCategory));

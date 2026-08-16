@@ -4,7 +4,10 @@ const mensagem = document.getElementById("mensagem");
 const STATUS_LABEL = {
   pending: "Pendente",
   paid: "Pago",
+  preparing: "Preparando",
   shipped: "Enviado",
+  in_transit: "Em trânsito",
+  out_for_delivery: "Saiu p/ entrega",
   delivered: "Entregue",
   cancelled: "Cancelado",
 };
@@ -17,8 +20,20 @@ const PAYMENT_METHOD = {
 
 const PAYMENT_STATUS_LABEL = {
   pending: "Aguardando",
-  paid: "Pago",
+  approved: "Aprovado",
+  rejected: "Recusado",
   refunded: "Estornado",
+  cancelled: "Cancelado",
+};
+
+const TIMELINE_LABEL = {
+  order_received: "Pedido recebido",
+  payment_approved: "Pagamento aprovado",
+  order_prepared: "Pedido preparado",
+  posted: "Objeto postado",
+  in_transit: "Em trânsito",
+  out_for_delivery: "Saiu para entrega",
+  delivered: "Entregue",
 };
 
 function formatDate(value) {
@@ -88,7 +103,7 @@ function renderOrders(orders) {
               <td>${PAYMENT_METHOD[o.payment_method] || "-"} · ${payChip(o.payment_status)}</td>
               <td>${statusChip(o.status)}</td>
               <td>${money(o.total)}</td>
-              <td><button class="link" data-order="${o.id}">Ver itens</button></td>
+              <td><button class="link" data-order="${o.id}">Ver detalhes</button></td>
             </tr>
           `
             )
@@ -135,9 +150,34 @@ function paymentBlockHtml(payment) {
   `;
 }
 
+function timelineHtml(tracking, status) {
+  const events = Array.isArray(tracking) && tracking.length ? tracking : null;
+
+  if (events) {
+    const items = events
+      .map(
+        (e) => `
+          <li class="timeline-item">
+            <span class="timeline-dot"></span>
+            <div>
+              <strong>${TIMELINE_LABEL[e.status] || e.status}</strong>
+              <small>${formatDate(e.event_date)}</small>
+              ${e.description ? `<p class="admin-muted">${escapeHtml(e.description)}</p>` : ""}
+            </div>
+          </li>
+        `
+      )
+      .join("");
+    return `<ul class="timeline">${items}</ul>`;
+  }
+
+  const current = STATUS_LABEL[status] || status;
+  return `<p class="admin-muted">Ainda sem eventos de rastreamento. Status atual: ${current}.</p>`;
+}
+
 async function showOrder(orderId) {
   try {
-    const { order, items, payment } = await API.get(`/orders/${orderId}`);
+    const { order, items, payment, tracking } = await API.get(`/orders/${orderId}`);
     const rows = items
       .map(
         (i) => `
@@ -162,8 +202,8 @@ async function showOrder(orderId) {
         </table>
       </div>
       <div class="cart-total">
-        <span>Total:</span>
-        <strong>${money(order.total)}</strong>
+        <span>Subtotal: ${money(order.subtotal)} + Frete: ${money(order.shipping_cost)}</span>
+        <strong>Total: ${money(order.total)}</strong>
       </div>
       <br>
       <div class="form-card" style="margin-bottom:24px">
@@ -171,6 +211,10 @@ async function showOrder(orderId) {
         ${paymentBlockHtml(payment)}
         ${order.shipping_address ? `<p class="admin-info" style="margin-top:10px"><b>Endereço de entrega:</b> ${escapeHtml(order.shipping_address)}</p>` : ""}
         ${order.tracking_code ? `<p class="admin-info" style="margin-top:10px"><b>Código de rastreio:</b> ${escapeHtml(order.tracking_code)}</p>` : ""}
+      </div>
+      <div class="form-card" style="margin-bottom:24px">
+        <h3>Rastreamento</h3>
+        ${timelineHtml(tracking, order.status)}
       </div>
       <a class="btn btn-outline" href="pedidos.html">&larr; Voltar para meus pedidos</a>
     `;

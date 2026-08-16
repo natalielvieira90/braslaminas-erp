@@ -3,6 +3,7 @@ const pool = require("../config/db");
 const SELECT_COLUMNS = `
   id, name, slug, description,
   price, stock, category, category_id, image_url, active,
+  weight, height, width, length,
   created_at
 `;
 
@@ -58,19 +59,19 @@ async function resolveCategoryId(name) {
   return rows[0] ? rows[0].id : null;
 }
 
-async function create({ name, slug, description, price, stock, category, imageUrl }) {
+async function create({ name, slug, description, price, stock, category, imageUrl, weight, height, width, length }) {
   const categoryId = await resolveCategoryId(category);
   const { rows } = await pool.query(
-    `INSERT INTO products (name, slug, description, price, stock, category, image_url, category_id)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `INSERT INTO products (name, slug, description, price, stock, category, image_url, category_id, weight, height, width, length)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
      RETURNING ${SELECT_COLUMNS}`,
-    [name, slug, description, price, stock, category, imageUrl, categoryId]
+    [name, slug, description, price, stock, category, imageUrl, categoryId, weight ?? 0, height ?? 0, width ?? 0, length ?? 0]
   );
   return rows[0];
 }
 
 async function update(id, fields) {
-  const allowed = ["name", "description", "price", "stock", "category", "image_url", "active"];
+  const allowed = ["name", "description", "price", "stock", "category", "image_url", "active", "weight", "height", "width", "length"];
   const sets = [];
   const params = [];
 

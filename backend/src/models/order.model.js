@@ -1,22 +1,28 @@
 const pool = require("../config/db");
 
-async function create(userId, items, { paymentMethod, shippingAddress }) {
+async function create(userId, items, { paymentMethod, shippingAddress, cep, shippingOption, shippingCost, discount }) {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
 
-    const total = items.reduce((sum, i) => sum + Number(i.price) * i.quantity, 0);
-
-    const autoPaid = paymentMethod === "pix" || paymentMethod === "credit_card";
-    const initialStatus = autoPaid ? "paid" : "pending";
-    const paymentStatus = autoPaid ? "paid" : "pending";
+    const subtotal = items.reduce((sum, i) => sum + Number(i.price) * i.quantity, 0);
+    const shippingCostNum = Number(shippingCost) || 0;
+    const discountNum = Number(discount) || 0;
+    const total = Math.max(0, subtotal + shippingCostNum - discountNum);
+    const shippingMethod =
+      shippingOption && shippingOption.carrier
+        ? `${shippingOption.carrier} - ${shippingOption.service}`
+        : null;
 
     const { rows } = await client.query(
-      `INSERT INTO orders (user_id, total, status, payment_method, payment_status, shipping_address)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO orders (user_id, total, status, payment_method, payment_status,
+                           shipping_address, subtotal, shipping_cost, discount,
+                           shipping_method, shipping_status, cep)
+       VALUES ($1, $2, 'pending', $3::varchar, 'pending', $4::varchar, $5, $6, $7, $8::varchar, 'pending', $9::varchar)
        RETURNING id, user_id, total, status, payment_method, payment_status,
-                 shipping_address, tracking_code, created_at`,
-      [userId, total, initialStatus, paymentMethod || null, paymentStatus, shippingAddress || null]
+                 shipping_address, subtotal, shipping_cost, discount,
+                 shipping_method, shipping_status, cep, tracking_code, created_at`,
+      [userId, total, paymentMethod || null, shippingAddress || null, subtotal, shippingCostNum, discountNum, shippingMethod, cep || null]
     );
     const order = rows[0];
 
@@ -55,7 +61,8 @@ async function create(userId, items, { paymentMethod, shippingAddress }) {
 
 async function listByUser(userId) {
   const { rows } = await pool.query(
-    `SELECT id, total, status, payment_method, payment_status, tracking_code, created_at
+    `SELECT id, total, status, payment_method, payment_status, shipping_method, shipping_status,
+            tracking_code, cep, created_at
      FROM orders
      WHERE user_id = $1
      ORDER BY created_at DESC`,
@@ -67,7 +74,8 @@ async function listByUser(userId) {
 async function findById(orderId) {
   const { rows } = await pool.query(
     `SELECT id, user_id, total, status, payment_method, payment_status,
-            shipping_address, tracking_code, created_at, updated_at
+            shipping_address, subtotal, shipping_cost, discount,
+            shipping_method, shipping_status, cep, tracking_code, created_at, updated_at
      FROM orders
      WHERE id = $1`,
     [orderId]
@@ -105,6 +113,7 @@ async function listAdmin({ status, search, limit = 100, offset = 0 }) {
 
   const { rows } = await pool.query(
     `SELECT o.id, o.user_id, o.total, o.status, o.payment_method, o.payment_status,
+            o.shipping_method, o.shipping_status, o.cep,
             o.tracking_code, o.created_at,
             u.name AS customer_name, u.email AS customer_email
      FROM orders o
@@ -147,6 +156,16 @@ async function updateTracking(orderId, trackingCode) {
   return rows[0];
 }
 
+async function updateShippingStatus(orderId, shippingStatus) {
+  const { rows } = await pool.query(
+    `UPDATE orders SET shipping_status = $1, updated_at = now()
+     WHERE id = $2
+     RETURNING *`,
+    [shippingStatus, orderId]
+  );
+  return rows[0];
+}
+
 async function countByStatus({ from, to }) {
   const conditions = [
     "created_at >= COALESCE($1::timestamptz, '1970-01-01')",
@@ -171,5 +190,6 @@ module.exports = {
   updateStatus,
   updatePaymentStatus,
   updateTracking,
+  updateShippingStatus,
   countByStatus,
 };

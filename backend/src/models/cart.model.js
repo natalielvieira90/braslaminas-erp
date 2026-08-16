@@ -11,6 +11,10 @@ async function listByUser(userId) {
        p.price,
        p.image_url,
        p.stock,
+       p.weight,
+       p.height,
+       p.width,
+       p.length,
        (p.price * ci.quantity) AS subtotal
      FROM cart_items ci
      JOIN products p ON p.id = ci.product_id

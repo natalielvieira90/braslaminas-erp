@@ -1,7 +1,21 @@
 const conteudo = document.getElementById("conteudo-carrinho");
 const mensagem = document.getElementById("mensagem");
 
-let cartState = { items: [], total: 0 };
+let cartState = { items: [], total: 0, shippingOption: null, shippingCost: 0 };
+let appMode = "production";
+
+async function loadAppMode() {
+  try {
+    const health = await API.get("/health");
+    appMode = health.appMode || "production";
+  } catch {
+    appMode = "production";
+  }
+}
+
+function isDemo() {
+  return appMode === "demo";
+}
 
 function cartRows(items, total) {
   const rows = items
@@ -88,7 +102,7 @@ async function loadCart() {
 
   try {
     const { items, total } = await API.get("/cart");
-    cartState = { items, total };
+    cartState = { items, total, shippingOption: null, shippingCost: 0 };
     conteudo.innerHTML = items.length ? cartRows(items, total) : cartEmpty();
 
     document.getElementById("btn-checkout")?.addEventListener("click", showCheckout);
@@ -137,16 +151,66 @@ function checkoutSummary() {
       `
     )
     .join("");
+
+  const shippingText = cartState.shippingOption
+    ? `${cartState.shippingOption.carrier} - ${cartState.shippingOption.service}`
+    : "Selecione o frete";
+
   return `
     <div class="form-card checkout-card">
       <h3>Resumo do pedido</h3>
       ${rows}
+      <div class="checkout-item">
+        <span>Frete (${shippingText})</span>
+        <b>${cartState.shippingOption ? money(cartState.shippingCost) : "—"}</b>
+      </div>
       <div class="cart-total" style="margin-top:12px">
         <span>Total:</span>
-        <strong>${money(cartState.total)}</strong>
+        <strong>${money(cartState.total + cartState.shippingCost)}</strong>
       </div>
     </div>
   `;
+}
+
+function renderShippingOptions(options) {
+  const box = document.getElementById("shipping-options");
+  if (!box) return;
+
+  if (!options || !options.length) {
+    box.innerHTML = `<p class="cep-status cep-error">Nenhuma opção de frete encontrada.</p>`;
+    return;
+  }
+
+  box.innerHTML = options
+    .map(
+      (option, index) => `
+        <label class="pay-option shipping-option">
+          <input type="radio" name="frete" value="${option.id}" data-price="${option.price}" ${index === 0 ? "checked" : ""}>
+          <span>
+            <b>${option.carrier} - ${option.service}</b>
+            <small>${money(option.price)} • ${option.delivery_days} dia(s) úteis</small>
+          </span>
+        </label>
+      `
+    )
+    .join("");
+
+  const first = box.querySelector('input[name="frete"]:checked');
+  if (first) selectShippingOption(first.value, Number(first.dataset.price));
+
+  box.querySelectorAll('input[name="frete"]').forEach((radio) =>
+    radio.addEventListener("change", () => {
+      selectShippingOption(radio.value, Number(radio.dataset.price));
+    })
+  );
+}
+
+function selectShippingOption(id, price) {
+  cartState.shippingOption = { id };
+  cartState.shippingCost = price;
+  document.getElementById("frete-status").textContent = "";
+  const summary = document.querySelector(".checkout-card");
+  if (summary) summary.innerHTML = checkoutSummary();
 }
 
 function showCheckout() {
@@ -196,6 +260,13 @@ function showCheckout() {
         </div>
 
         <div class="form-card">
+          <h3>Frete</h3>
+          <p class="cep-status" id="frete-status">Informe o CEP e clique em "Calcular frete".</p>
+          <button class="btn btn-outline" id="btn-calcular-frete" style="margin-top:8px">Calcular frete</button>
+          <div id="shipping-options" style="margin-top:12px"></div>
+        </div>
+
+        <div class="form-card">
           <h3>Forma de pagamento</h3>
           <div class="pay-options">
             <label class="pay-option">
@@ -242,6 +313,7 @@ function showCheckout() {
   `;
 
   document.getElementById("btn-voltar-carrinho").addEventListener("click", loadCart);
+  document.getElementById("btn-calcular-frete").addEventListener("click", calculateShipping);
 
   document.querySelectorAll('input[name="pagamento"]').forEach((radio) =>
     radio.addEventListener("change", () => {
@@ -276,15 +348,7 @@ async function buscarCep(cep) {
   status.className = "cep-status";
 
   try {
-    const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-    const data = await res.json();
-
-    if (!res.ok || data.erro) {
-      status.textContent = "CEP não encontrado. Preencha manualmente.";
-      status.className = "cep-status cep-error";
-      return;
-    }
-
+    const data = await API.get(`/cep/${cep}`);
     document.getElementById("end-rua").value = data.logradouro || "";
     document.getElementById("end-bairro").value = data.bairro || "";
     document.getElementById("end-cidade").value = data.localidade || "";
@@ -297,8 +361,8 @@ async function buscarCep(cep) {
       status.textContent = "CEP encontrado, mas sem logradouro. Preencha o restante.";
       status.className = "cep-status";
     }
-  } catch {
-    status.textContent = "Não foi possível consultar o CEP. Preencha manualmente.";
+  } catch (err) {
+    status.textContent = err.status === 404 ? "CEP não encontrado. Preencha manualmente." : err.message || "Não foi possível consultar o CEP.";
     status.className = "cep-status cep-error";
   }
 }
@@ -326,7 +390,34 @@ function readShippingAddress() {
     `CEP ${end.cep.value.trim()}`,
   ].filter(Boolean);
 
-  return { address: parts.join(" - ") };
+  return { address: parts.join(" - "), cep: end.cep.value.replace(/\D/g, "") };
+}
+
+async function calculateShipping() {
+  const shipping = readShippingAddress();
+  if (shipping.error) {
+    showMessage(mensagem, shipping.error);
+    toast(shipping.error, "error");
+    return;
+  }
+
+  const button = document.getElementById("btn-calcular-frete");
+  button.disabled = true;
+  button.textContent = "Calculando...";
+
+  try {
+    const data = await API.get(`/shipping/quote?cep_destino=${shipping.cep}`);
+    renderShippingOptions(data.options);
+    const status = document.getElementById("frete-status");
+    status.textContent = "Escolha a opção de frete:";
+    status.className = "cep-status cep-ok";
+  } catch (err) {
+    showMessage(mensagem, err.message);
+    toast(err.message, "error");
+  } finally {
+    button.disabled = false;
+    button.textContent = "Recalcular frete";
+  }
 }
 
 async function submitCheckout() {
@@ -337,9 +428,22 @@ async function submitCheckout() {
     toast(shipping.error, "error");
     return;
   }
+
+  if (!cartState.shippingOption) {
+    const message = "Calcule o frete e escolha uma opção de entrega.";
+    showMessage(mensagem, message);
+    toast(message, "error");
+    return;
+  }
+
   localStorage.setItem("braslaminas_endereco", shipping.address);
 
-  const payload = { payment_method: method, shipping_address: shipping.address };
+  const payload = {
+    payment_method: method,
+    shipping_address: shipping.address,
+    cep: shipping.cep,
+    shipping_option_id: cartState.shippingOption.id,
+  };
 
   if (method === "credit_card") {
     const card = {
@@ -371,15 +475,14 @@ async function submitCheckout() {
   }
 }
 
-function showPaymentResult(order, payment) {
+function paymentInstructions(payment) {
   const d = payment?.details || {};
-  let paymentBox = "";
 
   if (payment?.method === "pix") {
-    paymentBox = `
+    return `
       <div class="form-card" style="margin-top:20px">
         <h3>Pague com PIX</h3>
-        <p class="payment-note">Escaneie o código ou copie e cole no app do seu banco. O pedido é confirmado automaticamente.</p>
+        <p class="payment-note">Escaneie o código ou copie e cole no app do seu banco.</p>
         <div class="code-box">
           <small>PIX Copia e Cola</small>
           <code id="pix-code">${d.pix_code || ""}</code>
@@ -387,11 +490,13 @@ function showPaymentResult(order, payment) {
         <button class="btn" id="btn-copiar-pix">Copiar código</button>
       </div>
     `;
-  } else if (payment?.method === "boleto") {
-    paymentBox = `
+  }
+
+  if (payment?.method === "boleto") {
+    return `
       <div class="form-card" style="margin-top:20px">
         <h3>Pague com boleto</h3>
-        <p class="payment-note">Vencimento: <b>${new Date(d.due_date).toLocaleDateString("pt-BR")}</b>. O pedido será confirmado após o pagamento ser compensado.</p>
+        <p class="payment-note">Vencimento: <b>${new Date(d.due_date).toLocaleDateString("pt-BR")}</b>.</p>
         <div class="code-box">
           <small>Linha digitável</small>
           <code id="barcode-code">${d.barcode || ""}</code>
@@ -399,22 +504,46 @@ function showPaymentResult(order, payment) {
         <button class="btn" id="btn-copiar-boleto">Copiar linha digitável</button>
       </div>
     `;
-  } else if (payment?.method === "credit_card") {
-    paymentBox = `
+  }
+
+  if (payment?.method === "credit_card") {
+    return `
       <div class="form-card" style="margin-top:20px">
-        <h3>Pagamento aprovado</h3>
-        <p class="payment-note">Autorização: <b>${payment.transaction_code || ""}</b></p>
-        <p class="payment-note">Cartão •••• ${d.card_last4 || ""}</p>
+        <h3>Cartão de crédito</h3>
+        <p class="payment-note">Cartão •••• ${d.card_last4 || "—"} • Autorização: <b>${payment.transaction_code || ""}</b></p>
       </div>
     `;
   }
 
+  return "";
+}
+
+function demoActions(order) {
+  return `
+    <div class="form-card" style="margin-top:20px;border-color:var(--dourado)">
+      <h3 style="color:var(--dourado)">Modo demonstração</h3>
+      <p class="payment-note">Simule a confirmação do pagamento como se o gateway tivesse notificado o backend:</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <button class="btn" id="btn-sim-aprovar" data-outcome="approved">Simular pagamento aprovado</button>
+        <button class="btn btn-outline" id="btn-sim-recusar" data-outcome="rejected">Simular pagamento recusado</button>
+      </div>
+    </div>
+  `;
+}
+
+function showPaymentResult(order, payment) {
+  const paymentBox = paymentInstructions(payment);
+  const demoBox = isDemo() ? demoActions(order) : "";
+  const badge = order.payment_status === "approved" ? "confirmado" : "criado";
+
   conteudo.innerHTML = `
     <div class="cart-empty" style="padding:40px 0">
-      <h2>Pedido ${order.id.slice(0, 8)} ${order.status === "paid" ? "confirmado" : "criado"}!</h2>
-      <p>${order.status === "paid" ? "Pagamento aprovado. Acompanhe seu pedido em Minha Conta." : "Aguardando pagamento. Você pode acompanhar o pedido em Minha Conta."}</p>
+      <h2>Pedido ${order.id.slice(0, 8)} ${badge}!</h2>
+      <p>${order.payment_status === "approved" ? "Pagamento aprovado. Acompanhe seu pedido em Minha Conta." : "Aguardando pagamento."}</p>
     </div>
     ${paymentBox}
+    ${demoBox}
+    <div id="sim-result"></div>
     <div style="display:flex;gap:12px;justify-content:center;margin-top:24px">
       <a class="btn" href="pedidos.html">Acompanhar pedido</a>
       <a class="btn btn-outline" href="produtos.html">Continuar comprando</a>
@@ -422,14 +551,41 @@ function showPaymentResult(order, payment) {
   `;
 
   document.getElementById("btn-copiar-pix")?.addEventListener("click", () => {
-    navigator.clipboard.writeText(d.pix_code || "").then(() => toast("Código PIX copiado!", "success"));
+    navigator.clipboard.writeText(payment?.details?.pix_code || "").then(() => toast("Código PIX copiado!", "success"));
   });
   document.getElementById("btn-copiar-boleto")?.addEventListener("click", () => {
-    navigator.clipboard.writeText(d.barcode || "").then(() => toast("Linha digitável copiada!", "success"));
+    navigator.clipboard.writeText(payment?.details?.barcode || "").then(() => toast("Linha digitável copiada!", "success"));
   });
+
+  document.querySelectorAll("[data-outcome]").forEach((btn) =>
+    btn.addEventListener("click", () => simulatePayment(order.id, btn.dataset.outcome, btn))
+  );
+}
+
+async function simulatePayment(orderId, outcome, button) {
+  button.disabled = true;
+  button.textContent = "Simulando...";
+
+  try {
+    const result = await API.post(`/orders/${orderId}/simulate-payment`, { outcome });
+    const status = document.getElementById("sim-result");
+    const approved = result.order.payment_status === "approved";
+    status.innerHTML = `
+      <div class="cep-status ${approved ? "cep-ok" : "cep-error"}" style="font-size:15px;margin-top:8px">
+        Pagamento ${approved ? "aprovado!" : "recusado."} O pedido agora está <b>${result.order.status}</b>.
+      </div>
+    `;
+    toast(approved ? "Pagamento aprovado!" : "Pagamento recusado", approved ? "success" : "error");
+    document.querySelectorAll("[data-outcome]").forEach((btn) => btn.remove());
+  } catch (err) {
+    toast(err.message, "error");
+    button.disabled = false;
+    button.textContent = "Simular novamente";
+  }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  loadAppMode();
   loadCart();
 
   conteudo.addEventListener("click", (e) => {

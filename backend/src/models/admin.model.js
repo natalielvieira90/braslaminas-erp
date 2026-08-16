@@ -11,7 +11,7 @@ function slugify(text) {
 }
 
 async function dashboard({ from, to }) {
-  const condPaid = `WHERE o.payment_status = 'paid' AND o.status <> 'cancelled' AND o.created_at >= COALESCE($1::timestamptz, '1970-01-01') AND o.created_at <= COALESCE($2::timestamptz, now())`;
+  const condPaid = `WHERE o.payment_status = 'approved' AND o.status <> 'cancelled' AND o.created_at >= COALESCE($1::timestamptz, '1970-01-01') AND o.created_at <= COALESCE($2::timestamptz, now())`;
   const condAll = `WHERE o.created_at >= COALESCE($1::timestamptz, '1970-01-01') AND o.created_at <= COALESCE($2::timestamptz, now())`;
 
   const [revenueRes, ordersRes, customersRes, topRes, lowStockRes, recentRes, statusRes, daysRes] =
@@ -35,7 +35,7 @@ async function dashboard({ from, to }) {
         `SELECT oi.name, SUM(oi.quantity)::int AS sold, SUM(oi.quantity * oi.price)::float AS revenue
          FROM order_items oi
          JOIN orders o ON o.id = oi.order_id
-         WHERE o.payment_status = 'paid' AND o.status <> 'cancelled'
+         WHERE o.payment_status = 'approved' AND o.status <> 'cancelled'
            AND o.created_at >= COALESCE($1::timestamptz, '1970-01-01') AND o.created_at <= COALESCE($2::timestamptz, now())
          GROUP BY oi.name
          ORDER BY sold DESC
@@ -68,7 +68,7 @@ async function dashboard({ from, to }) {
                 CASE WHEN $1::date IS NULL THEN now()::date - 13 ELSE $1::date END,
                 COALESCE($2::date, now()::date), '1 day'::interval) AS d(day)
          LEFT JOIN orders o ON o.created_at::date = d.day
-           AND o.payment_status = 'paid' AND o.status <> 'cancelled'
+           AND o.payment_status = 'approved' AND o.status <> 'cancelled'
          GROUP BY d.day
          ORDER BY d.day`,
         [from || null, to || null]
@@ -176,7 +176,7 @@ async function listCustomers({ search }) {
     `SELECT u.id, u.name, u.email, u.created_at,
             (SELECT COUNT(*) FROM orders o WHERE o.user_id = u.id)::int AS order_count,
             (SELECT COALESCE(SUM(o.total), 0) FROM orders o
-              WHERE o.user_id = u.id AND o.payment_status = 'paid' AND o.status <> 'cancelled')::float AS total_spent
+              WHERE o.user_id = u.id AND o.payment_status = 'approved' AND o.status <> 'cancelled')::float AS total_spent
      FROM users u
      ${conditions.length ? `WHERE ${conditions.join(" AND ")}` : ""}
      ORDER BY u.created_at DESC

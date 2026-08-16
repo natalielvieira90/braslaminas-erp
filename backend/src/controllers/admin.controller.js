@@ -1,6 +1,7 @@
 const adminModel = require("../models/admin.model");
 const orderModel = require("../models/order.model");
 const paymentModel = require("../models/payment.model");
+const trackingModel = require("../models/tracking.model");
 const productModel = require("../models/product.model");
 
 async function dashboard(req, res) {
@@ -23,17 +24,18 @@ async function showOrder(req, res) {
   if (!order) {
     return res.status(404).json({ error: "Pedido não encontrado." });
   }
-  const [items, payment] = await Promise.all([
+  const [items, payment, tracking] = await Promise.all([
     orderModel.itemsByOrder(order.id),
     paymentModel.findByOrder(order.id),
+    trackingModel.listByOrder(order.id),
   ]);
-  res.json({ order, items, payment });
+  res.json({ order, items, payment, tracking });
 }
 
 async function updateStatus(req, res) {
   const { id } = req.params;
   const { status } = req.body;
-  const allowed = ["pending", "paid", "shipped", "delivered", "cancelled"];
+  const allowed = ["pending", "paid", "preparing", "shipped", "in_transit", "out_for_delivery", "delivered", "cancelled"];
   if (!allowed.includes(status)) {
     return res.status(400).json({ error: "Status inválido." });
   }
@@ -55,53 +57,74 @@ async function updateTracking(req, res) {
 }
 
 async function confirmPayment(req, res) {
-  const { id } = req.params;
-  const order = await orderModel.findById(id);
+  const order = await orderModel.findById(req.params.id);
   if (!order) {
     return res.status(404).json({ error: "Pedido não encontrado." });
   }
-
-  const payment = await paymentModel.findByOrder(id);
-  if (!payment) {
-    return res.status(404).json({ error: "Pagamento não encontrado." });
-  }
-
-  const updated = await paymentModel.confirm(payment.id);
-  if (!updated) {
-    return res.status(400).json({ error: "Pagamento já confirmado ou não pode ser confirmado." });
-  }
-
-  await orderModel.updatePaymentStatus(id, "paid");
-  if (order.status === "pending") {
-    await orderModel.updateStatus(id, "paid");
-  }
-
-  res.json({ payment: updated, order: await orderModel.findById(id) });
+  const paymentWebhook = require("../webhooks/payment.webhook");
+  const result = await paymentWebhook.handlePaymentEvent({
+    event: "payment.approved",
+    order_id: order.id,
+  });
+  res.json(result);
 }
 
 async function refundPayment(req, res) {
+  const order = await orderModel.findById(req.params.id);
+  if (!order) {
+    return res.status(404).json({ error: "Pedido não encontrado." });
+  }
+  const paymentWebhook = require("../webhooks/payment.webhook");
+  const result = await paymentWebhook.handlePaymentEvent({
+    event: "payment.refunded",
+    order_id: order.id,
+  });
+  res.json(result);
+}
+
+const SIMULATE_ACTIONS = {
+  approve_payment: { event: "payment.approved", handler: "payment" },
+  reject_payment: { event: "payment.rejected", handler: "payment" },
+  ship: { event: "shipment.created", handler: "shipping" },
+  in_transit: { event: "tracking.in_transit", handler: "shipping" },
+  out_for_delivery: { event: "tracking.out_for_delivery", handler: "shipping" },
+  delivered: { event: "tracking.delivered", handler: "shipping" },
+};
+
+async function simulate(req, res) {
+  if (!require("../config").isDemo) {
+    return res.status(400).json({ error: "Simulação disponível apenas no modo demo." });
+  }
+
   const { id } = req.params;
+  const { action, outcome } = req.body;
+
   const order = await orderModel.findById(id);
   if (!order) {
     return res.status(404).json({ error: "Pedido não encontrado." });
   }
 
-  const payment = await paymentModel.findByOrder(id);
-  if (!payment) {
-    return res.status(404).json({ error: "Pagamento não encontrado." });
+  if (action === "approve_payment" || action === "reject_payment") {
+    const paymentWebhook = require("../webhooks/payment.webhook");
+    const result = await paymentWebhook.handlePaymentEvent({
+      event: action === "approve_payment" ? "payment.approved" : "payment.rejected",
+      order_id: order.id,
+    });
+    return res.json({ success: true, ...result });
   }
 
-  const updated = await paymentModel.refund(payment.id);
-  if (!updated) {
-    return res.status(400).json({ error: "Pagamento não está pago para ser estornado." });
+  const mapping = SIMULATE_ACTIONS[action];
+  if (!mapping) {
+    return res.status(400).json({ error: "Ação de simulação inválida." });
   }
 
-  await orderModel.updatePaymentStatus(id, "refunded");
-  if (order.status === "paid") {
-    await orderModel.updateStatus(id, "cancelled");
-  }
-
-  res.json({ payment: updated, order: await orderModel.findById(id) });
+  const shippingWebhook = require("../webhooks/shipping.webhook");
+  const result = await shippingWebhook.handleShippingEvent({
+    event: mapping.event,
+    order_id: order.id,
+    option: outcome,
+  });
+  res.json({ success: true, ...result });
 }
 
 async function listCategories(req, res) {
@@ -192,6 +215,7 @@ module.exports = {
   updateTracking,
   confirmPayment,
   refundPayment,
+  simulate,
   listCategories,
   createCategory,
   updateCategory,
