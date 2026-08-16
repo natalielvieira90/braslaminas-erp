@@ -23,6 +23,7 @@ router.put("/categories/:id", asyncHandler(adminController.updateCategory));
 router.delete("/categories/:id", asyncHandler(adminController.removeCategory));
 
 router.get("/customers", asyncHandler(adminController.listCustomers));
+router.post("/customers", asyncHandler(adminController.createCustomer));
 router.get("/customers/:id", asyncHandler(adminController.showCustomer));
 
 router.get("/contact", asyncHandler(adminController.listContact));

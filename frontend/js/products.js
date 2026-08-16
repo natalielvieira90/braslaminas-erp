@@ -19,24 +19,36 @@ function skeletonCard() {
   `;
 }
 
+async function loadCategories() {
+  try {
+    const { categories } = await API.get("/categories");
+    categories.forEach((c) => {
+      const option = document.createElement("option");
+      option.value = c.name;
+      option.textContent = c.name;
+      categoria.appendChild(option);
+    });
+
+    if (initialCategoria && !categories.some((c) => c.name === initialCategoria)) {
+      const option = document.createElement("option");
+      option.value = initialCategoria;
+      option.textContent = initialCategoria;
+      categoria.appendChild(option);
+    }
+    if (initialCategoria) {
+      categoria.value = initialCategoria;
+    }
+  } catch {
+    // mantém apenas "Todas as categorias"
+  }
+}
+
 async function loadProducts() {
   grid.innerHTML = [0, 1, 2, 3, 4, 5].map(skeletonCard).join("");
 
   try {
     const { products } = await API.get("/products?limit=100");
     allProducts = products;
-
-    const categories = [...new Set(products.map((p) => p.category).filter(Boolean))];
-    categories.forEach((c) => {
-      const option = document.createElement("option");
-      option.value = c;
-      option.textContent = c;
-      categoria.appendChild(option);
-    });
-
-    if (initialCategoria && categories.includes(initialCategoria)) {
-      categoria.value = initialCategoria;
-    }
 
     render();
   } catch (err) {
@@ -75,6 +87,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (term) busca.value = term;
 
   loadProducts();
+  loadCategories();
   initAddToCart();
 
   busca.addEventListener("input", render);

@@ -13,11 +13,6 @@
 }
 
 @media (max-width: 900px) {
-    .topbar-inner {
-        justify-content: center;
-        gap: 14px;
-    }
-
     .hdr {
         grid-template-columns: 1fr auto;
         gap: 14px;
@@ -86,10 +81,6 @@
 }
 
 @media (max-width: 600px) {
-    .topbar-link:not(.topbar-cta) {
-        display: none;
-    }
-
     .hdr-right {
         gap: 14px;
     }

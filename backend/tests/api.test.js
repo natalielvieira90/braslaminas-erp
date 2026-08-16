@@ -634,12 +634,98 @@ describe("Admin autenticado", () => {
     assert.strictEqual(remove.status, 204);
   });
 
+  it("categoria ativa aparece e inativa some da loja", async () => {
+    const create = await request(app)
+      .post("/api/admin/categories")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ name: `Teste-${unique}-vitrine` });
+    assert.strictEqual(create.status, 201);
+    const id = create.body.category.id;
+
+    const shown = await request(app).get("/api/categories");
+    assert.strictEqual(shown.status, 200);
+    assert.ok(shown.body.categories.some((c) => c.id === id));
+
+    await request(app)
+      .put(`/api/admin/categories/${id}`)
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ active: false });
+
+    const hidden = await request(app).get("/api/categories");
+    assert.strictEqual(hidden.status, 200);
+    assert.ok(!hidden.body.categories.some((c) => c.id === id));
+
+    await request(app)
+      .del(`/api/admin/categories/${id}`)
+      .set("Authorization", `Bearer ${adminToken}`);
+  });
+
   it("lista clientes cadastrados", async () => {
     const res = await request(app)
       .get("/api/admin/customers")
       .set("Authorization", `Bearer ${adminToken}`);
     assert.strictEqual(res.status, 200);
     assert.ok(Array.isArray(res.body.customers));
+  });
+
+  it("cria cliente pelo admin", async () => {
+    const email = `teste-admin-cli-${unique}@example.com`;
+
+    const created = await request(app)
+      .post("/api/admin/customers")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ name: "Cliente Criado Pelo Admin", email, password: "123456" });
+    assert.strictEqual(created.status, 201);
+    assert.strictEqual(created.body.customer.email, email);
+    assert.strictEqual(created.body.customer.role, "customer");
+    assert.ok(created.body.customer.id);
+
+    const login = await request(app).post("/api/auth/login").send({ email, password: "123456" });
+    assert.strictEqual(login.status, 200);
+
+    const list = await request(app)
+      .get("/api/admin/customers")
+      .set("Authorization", `Bearer ${adminToken}`);
+    assert.ok(list.body.customers.some((c) => c.email === email));
+  });
+
+  it("rejeita e-mail duplicado ao criar cliente", async () => {
+    const res = await request(app)
+      .post("/api/admin/customers")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({
+        name: "Duplicado",
+        email: `teste-admin-cli-${unique}@example.com`,
+        password: "123456",
+      });
+    assert.strictEqual(res.status, 409);
+  });
+
+  it("valida dados ao criar cliente pelo admin", async () => {
+    const shortPass = await request(app)
+      .post("/api/admin/customers")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ name: "Cliente", email: `teste-admin-inv-${unique}@example.com`, password: "123" });
+    assert.strictEqual(shortPass.status, 400);
+
+    const badEmail = await request(app)
+      .post("/api/admin/customers")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ name: "Cliente", email: "sem-arroba", password: "123456" });
+    assert.strictEqual(badEmail.status, 400);
+
+    const noName = await request(app)
+      .post("/api/admin/customers")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ name: "  ", email: `teste-admin-inv2-${unique}@example.com`, password: "123456" });
+    assert.strictEqual(noName.status, 400);
+  });
+
+  it("bloqueia criação de cliente sem token de admin", async () => {
+    const res = await request(app)
+      .post("/api/admin/customers")
+      .send({ name: "Sem Token", email: `teste-admin-noid-${unique}@example.com`, password: "123456" });
+    assert.strictEqual(res.status, 401);
   });
 
   it("lista e remove mensagens de contato", async () => {

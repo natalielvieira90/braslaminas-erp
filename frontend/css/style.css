@@ -1062,49 +1062,9 @@ footer ul a:hover {
 }
 
 /* ============================================================
-   HOME — BARRA SUPERIOR / HEADER / MENU / SLIDER / FLUTUANTES
+   HOME — HEADER / MENU / SLIDER / FLUTUANTES
    Escopado em body.home para não afetar as páginas internas
    ============================================================ */
-
-/* ---------- BARRA SUPERIOR ---------- */
-
-.topbar {
-    background: var(--branco);
-    border-bottom: 1px solid var(--cinza-borda);
-    height: 41px;
-}
-
-.topbar-inner {
-    height: 41px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 24px;
-    max-width: 1180px;
-}
-
-.topbar-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--cinza-mutado);
-    font-size: 13px;
-    text-decoration: none;
-    transition: color var(--transicao);
-}
-
-.topbar-link:hover {
-    color: var(--azul);
-}
-
-.topbar-cta {
-    font-weight: 600;
-    color: var(--azul);
-}
-
-.topbar-cta:hover {
-    color: var(--azul-claro);
-}
 
 /* ---------- HEADER PRINCIPAL ---------- */
 

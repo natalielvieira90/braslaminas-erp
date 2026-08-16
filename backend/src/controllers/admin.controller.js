@@ -1,8 +1,10 @@
+const bcrypt = require("bcryptjs");
 const adminModel = require("../models/admin.model");
 const orderModel = require("../models/order.model");
 const paymentModel = require("../models/payment.model");
 const trackingModel = require("../models/tracking.model");
 const productModel = require("../models/product.model");
+const userModel = require("../models/user.model");
 
 async function dashboard(req, res) {
   const { de, ate } = req.query;
@@ -183,6 +185,31 @@ async function showCustomer(req, res) {
   res.json({ customer, orders });
 }
 
+async function createCustomer(req, res) {
+  const name = String(req.body.name || "").trim();
+  const email = String(req.body.email || "").trim().toLowerCase();
+  const password = String(req.body.password || "");
+
+  if (!name) {
+    return res.status(400).json({ error: "Nome é obrigatório." });
+  }
+  if (!email || !email.includes("@")) {
+    return res.status(400).json({ error: "E-mail inválido." });
+  }
+  if (password.length < 6) {
+    return res.status(400).json({ error: "Senha deve ter ao menos 6 caracteres." });
+  }
+
+  const existing = await userModel.findByEmail(email);
+  if (existing) {
+    return res.status(409).json({ error: "E-mail já cadastrado." });
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  const customer = await userModel.create({ name, email, passwordHash });
+  res.status(201).json({ customer });
+}
+
 async function listContact(req, res) {
   const messages = await adminModel.listContactMessages();
   res.json({ messages });
@@ -221,6 +248,7 @@ module.exports = {
   updateCategory,
   removeCategory,
   listCustomers,
+  createCustomer,
   showCustomer,
   listContact,
   removeContact,

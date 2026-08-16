@@ -17,6 +17,7 @@ const adminRoutes = require("./routes/admin.routes");
 const cepRoutes = require("./routes/cep.routes");
 const shippingRoutes = require("./routes/shipping.routes");
 const webhookRoutes = require("./routes/webhook.routes");
+const categoriesRoutes = require("./routes/categories.routes");
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use("/api/health", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
+app.use("/api/categories", categoriesRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/upload", uploadRoutes);

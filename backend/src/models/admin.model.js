@@ -105,6 +105,17 @@ async function listCategories() {
   return rows;
 }
 
+async function listActiveCategories() {
+  const { rows } = await pool.query(
+    `SELECT c.id, c.name, c.slug, c.created_at,
+            (SELECT COUNT(*) FROM products p WHERE p.category_id = c.id AND p.active = true)::int AS product_count
+     FROM categories c
+     WHERE c.active = true
+     ORDER BY c.name`
+  );
+  return rows;
+}
+
 async function findCategoryById(id) {
   const { rows } = await pool.query(
     `SELECT id, name, slug, active, created_at FROM categories WHERE id = $1`,
@@ -221,6 +232,7 @@ async function removeContactMessage(id) {
 module.exports = {
   dashboard,
   listCategories,
+  listActiveCategories,
   findCategoryById,
   createCategory,
   updateCategory,

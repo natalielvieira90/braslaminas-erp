@@ -70,6 +70,7 @@ const API = {
     if (!res.ok) {
       const error = new Error(data.error || "Erro na requisição.");
       error.status = res.status;
+      error.details = data.details;
       throw error;
     }
 

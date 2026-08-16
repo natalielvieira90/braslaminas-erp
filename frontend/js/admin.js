@@ -920,6 +920,7 @@ async function renderCategorias() {
     <div class="admin-section-head">
       <h2>Categorias</h2>
     </div>
+    <p class="admin-muted">Apenas categorias marcadas como "Exibida na loja" aparecem no menu do site.</p>
     <div class="form-card admin-form" style="max-width:420px">
       <div class="admin-filters">
         <input type="text" id="cat-nome" placeholder="Nova categoria">
@@ -928,7 +929,7 @@ async function renderCategorias() {
     </div>
     <div class="table-scroll" style="margin-top:20px">
       <table class="cart-table">
-        <thead><tr><th>Nome</th><th>Slug</th><th>Produtos</th><th>Status</th><th>Ações</th></tr></thead>
+        <thead><tr><th>Nome</th><th>Slug</th><th>Produtos</th><th>Exibida na loja</th><th>Ações</th></tr></thead>
         <tbody>
           ${cachedCategories
             .map(
@@ -937,10 +938,10 @@ async function renderCategorias() {
                   <td><strong>${escapeHtml(c.name)}</strong></td>
                   <td>${escapeHtml(c.slug)}</td>
                   <td>${c.product_count}</td>
-                  <td>${c.active ? "Ativa" : "Inativa"}</td>
+                  <td>${c.active ? "<b class='low-stock' style='color:var(--verde-claro)'>Sim</b>" : "Não"}</td>
                   <td>
                     <button class="link" data-editcat="${c.id}">Renomear</button> |
-                    <button class="link" data-togglecat="${c.id}" data-ativo="${!c.active}">${c.active ? "Desativar" : "Ativar"}</button> |
+                    <button class="link" data-togglecat="${c.id}" data-ativo="${!c.active}">${c.active ? "Esconder" : "Exibir na loja"}</button> |
                     <button class="link" data-delcat="${c.id}">Excluir</button>
                   </td>
                 </tr>
@@ -1017,8 +1018,10 @@ async function renderClientes() {
       <div class="admin-filters">
         <input type="search" id="cli-busca" placeholder="Nome ou e-mail">
         <button class="btn" id="cli-buscar">Buscar</button>
+        <button class="btn" id="btn-novo-cliente">+ Novo cliente</button>
       </div>
     </div>
+    <div id="cliente-form-wrapper"></div>
     <div class="table-scroll">
       <table class="cart-table">
         <thead><tr><th>Cliente</th><th>E-mail</th><th>Cadastro</th><th>Pedidos</th><th>Total gasto</th><th></th></tr></thead>
@@ -1031,8 +1034,60 @@ async function renderClientes() {
   document.getElementById("cli-busca").addEventListener("keydown", (e) => {
     if (e.key === "Enter") loadCustomers();
   });
+  document.getElementById("btn-novo-cliente").addEventListener("click", openCustomerForm);
 
   await loadCustomers();
+}
+
+function openCustomerForm() {
+  const wrapper = document.getElementById("cliente-form-wrapper");
+  wrapper.innerHTML = `
+    <div class="form-card admin-form" style="max-width:420px">
+      <h3 style="margin-bottom:16px">Novo cliente</h3>
+      <div class="form-group">
+        <label>Nome *</label>
+        <input id="c-nome" placeholder="Nome completo">
+      </div>
+      <div class="form-group">
+        <label>E-mail *</label>
+        <input id="c-email" type="email" placeholder="voce@email.com">
+      </div>
+      <div class="form-group">
+        <label>Senha *</label>
+        <input id="c-senha" type="password" placeholder="Mínimo 6 caracteres" minlength="6">
+      </div>
+      <div style="display:flex;gap:12px">
+        <button class="btn" id="btn-salvar-cliente">Salvar</button>
+        <button class="btn btn-outline" id="btn-cancelar-cliente">Cancelar</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("btn-cancelar-cliente").addEventListener("click", () => {
+    wrapper.innerHTML = "";
+  });
+
+  document.getElementById("btn-salvar-cliente").addEventListener("click", async () => {
+    const name = document.getElementById("c-nome").value.trim();
+    const email = document.getElementById("c-email").value.trim();
+    const password = document.getElementById("c-senha").value;
+
+    if (!name || !email || password.length < 6) {
+      showMessage(mensagem, "Preencha nome, e-mail e senha (mínimo 6 caracteres).");
+      return;
+    }
+
+    try {
+      const { customer } = await API.post("/admin/customers", { name, email, password });
+      toast("Cliente criado", "success");
+      wrapper.innerHTML = "";
+      await renderClientes();
+      const body = document.getElementById("cli-body");
+      body.innerHTML = `<tr><td colspan="6">Cliente <strong>${escapeHtml(customer.name)}</strong> cadastrado com sucesso.</td></tr>`;
+    } catch (err) {
+      showMessage(mensagem, err.message);
+    }
+  });
 }
 
 async function loadCustomers() {

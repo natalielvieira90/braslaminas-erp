@@ -160,20 +160,43 @@ function initSiteSearch() {
   });
 }
 
-async function loadDropdownCategories() {
-  const list = document.getElementById("nav-dropdown-list");
-  if (!list) return;
+async function loadNavCategories() {
+  const dropdown = document.getElementById("nav-dropdown-list");
+  const menu = document.querySelector(".nav-links");
+  const adminLink = document.getElementById("nav-admin");
 
   try {
-    const { products } = await API.get("/products?limit=100");
-    const categories = [...new Set(products.map((p) => p.category).filter(Boolean))];
-    list.innerHTML =
-      `<a href="${rel("produtos.html")}">Todos os produtos</a>` +
-      categories
-        .map((c) => `<a href="${rel("produtos.html")}?categoria=${encodeURIComponent(c)}">${c}</a>`)
-        .join("");
+    const { categories } = await API.get("/categories");
+
+    if (menu) {
+      categories.forEach((c) => {
+        const a = document.createElement("a");
+        a.href = `${rel("produtos.html")}?categoria=${encodeURIComponent(c.name)}`;
+        a.textContent = c.name;
+        menu.insertBefore(a, adminLink || null);
+      });
+    }
+
+    if (dropdown) {
+      dropdown.textContent = "";
+      const append = (href, text) => {
+        const a = document.createElement("a");
+        a.href = href;
+        a.textContent = text;
+        dropdown.appendChild(a);
+      };
+      append(rel("produtos.html"), "Todos os produtos");
+      categories.forEach((c) => {
+        append(`${rel("produtos.html")}?categoria=${encodeURIComponent(c.name)}`, c.name);
+      });
+    }
   } catch {
-    list.innerHTML = `<a href="${rel("produtos.html")}">Ver todos os produtos</a>`;
+    if (dropdown && !dropdown.children.length) {
+      const a = document.createElement("a");
+      a.href = rel("produtos.html");
+      a.textContent = "Ver todos os produtos";
+      dropdown.appendChild(a);
+    }
   }
 }
 
@@ -190,7 +213,7 @@ function initMenuDropdown() {
     dropdown.hidden = !open;
   });
 
-  loadDropdownCategories();
+  loadNavCategories();
 
   document.addEventListener("click", (e) => {
     if (!nav.contains(e.target)) {

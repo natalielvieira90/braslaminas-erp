@@ -12,6 +12,25 @@ function setActiveTab(active) {
   tabRegister.classList.toggle("active", !isLogin);
 }
 
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function showAuthError(err) {
+  if (Array.isArray(err.details) && err.details.length) {
+    mensagem.innerHTML = err.details
+      .map((d) => `<div>• ${escapeHtml(d.message)}</div>`)
+      .join("");
+    mensagem.className = "msg msg-error";
+  } else {
+    showMessage(mensagem, err.message);
+  }
+}
+
 tabLogin.addEventListener("click", () => setActiveTab("login"));
 tabRegister.addEventListener("click", () => setActiveTab("register"));
 
@@ -51,7 +70,7 @@ formRegister.addEventListener("submit", async (e) => {
       window.location.href = "../index.html";
     }, 1200);
   } catch (err) {
-    showMessage(mensagem, err.message);
+    showAuthError(err);
   }
 });
 
