@@ -6,168 +6,232 @@
 
 <meta charset="UTF-8">
 
-<title>BrasLâminas</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
+<title>BrasLâminas — Lâminas e Insumos para Microscopia</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="css/style.css">
 
 <link rel="stylesheet" href="css/responsive.css">
-
 
 </head>
 
 
 <body>
 
-
 <header>
 
 <div class="container menu">
 
-
 <div class="logo">
-
 Bras<span>Lâminas</span>
-
 </div>
 
+<button class="nav-toggle" id="menu-toggle" aria-label="Abrir menu">
+<span></span>
+<span></span>
+<span></span>
+</button>
 
 <nav>
-
-<a href="#">Inicio</a>
-
-<a href="pages/produtos.html">
-Produtos
-</a>
-
-<a href="pages/contato.html">
-Contato
-</a>
-
-<a href="pages/login.html">
-Login
-</a>
-
-
+<a href="index.html">Inicio</a>
+<a href="pages/produtos.html">Produtos</a>
+<a href="pages/contato.html">Contato</a>
+<a href="pages/carrinho.html" class="cart-link">Carrinho<span class="cart-badge" id="cart-count">0</span></a>
+<a href="pages/pedidos.html">Pedidos</a>
+<a href="pages/admin.html" id="nav-admin" style="display:none">Admin</a>
+<a href="pages/login.html" id="nav-auth">Login</a>
 </nav>
-
 
 </div>
 
 </header>
 
 
-
 <section class="banner">
-
 
 <div class="container">
 
+<span class="eyebrow">Precisão para o seu laboratório</span>
 
 <h1>
-Lâminas para Microscopia
+Lâminas para <span>Microscopia</span>
 </h1>
 
-
 <p>
-Qualidade e precisão para laboratórios.
+Qualidade e precisão em lâminas, lamínulas e insumos para laboratórios de todo o Brasil.
 </p>
 
-
-<a class="btn">
+<a class="btn" href="pages/produtos.html">
 Ver Produtos
 </a>
 
+<a class="btn btn-outline" href="pages/contato.html">
+Fale Conosco
+</a>
 
 </div>
-
 
 </section>
 
 
+<section class="features">
+
+<div class="container features-grid">
+
+<div class="feature reveal">
+
+<div class="icon">
+<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+</div>
+
+<h3>Qualidade garantida</h3>
+
+<p>Lâminas e insumos selecionados para uso profissional.</p>
+
+</div>
+
+
+<div class="feature reveal">
+
+<div class="icon">
+<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+</div>
+
+<h3>Envio rápido</h3>
+
+<p>Entrega para todo o Brasil com código de rastreio.</p>
+
+</div>
+
+
+<div class="feature reveal">
+
+<div class="icon">
+<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+</div>
+
+<h3>Suporte especializado</h3>
+
+<p>Atendimento de quem entende de microscopia.</p>
+
+</div>
+
+
+<div class="feature reveal">
+
+<div class="icon">
+<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+</div>
+
+<h3>Compra segura</h3>
+
+<p>Pagamento protegido e dados criptografados.</p>
+
+</div>
+
+</div>
+
+</section>
 
 
 <section class="produtos">
 
-
 <div class="container">
 
-
-<h2>
+<h2 class="section-title">
 Produtos em Destaque
 </h2>
 
-
-
-<div class="grid">
-
-
-<div class="card">
-
-<img src="images/produtos/lamina.jpg">
-
-<h3>
-Lâmina Histológica
-</h3>
-
-
-<p class="preco">
-R$29,90
+<p class="section-subtitle">
+Os itens mais procurados por laboratórios, universidades e clínicas.
 </p>
 
+<div class="grid" id="grid-produtos"></div>
+
+<p id="produtos-status" style="display:none"></p>
 
 </div>
-
-
-
-
-<div class="card">
-
-<img src="images/produtos/kit.jpg">
-
-
-<h3>
-Kit Laboratório
-</h3>
-
-
-<p class="preco">
-R$79,90
-</p>
-
-
-</div>
-
-
-
-</div>
-
-
-</div>
-
 
 </section>
 
 
-
 <footer>
 
-<h3>
-BrasLâminas
-</h3>
+<div class="container footer-grid">
 
+<div>
+
+<div class="logo">
+Bras<span>Lâminas</span>
+</div>
 
 <p>
-Produtos laboratoriais
+Qualidade e precisão em lâminas, lamínulas e insumos para microscopia.
 </p>
 
+</div>
+
+
+<div>
+
+<h3>Navegação</h3>
+
+<ul>
+
+<li><a href="index.html">Inicio</a></li>
+
+<li><a href="pages/produtos.html">Produtos</a></li>
+
+<li><a href="pages/pedidos.html">Meus pedidos</a></li>
+
+<li><a href="pages/contato.html">Contato</a></li>
+
+</ul>
+
+</div>
+
+
+<div>
+
+<h3>Atendimento</h3>
+
+<p>(11) 4002-8922</p>
+
+<p>contato@braslaminas.com.br</p>
+
+<p>Rua dos Laboratórios, 100 — São Paulo/SP</p>
+
+</div>
+
+</div>
+
+
+<div class="footer-bottom">
+
+<div class="container">
+© 2026 BrasLâminas. Todos os direitos reservados.
+</div>
+
+</div>
 
 </footer>
 
 
+<button id="back-top" aria-label="Voltar ao topo">↑</button>
+
+
+<script src="js/api.js"></script>
+
+<script src="js/app.js"></script>
+
+<script src="js/catalog.js"></script>
 
 <script src="js/main.js"></script>
-
 
 </body>
 

@@ -1,39 +1,200 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="pt-BR">
 
 <head>
 
-<title>Contato</title>
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Contato - BrasLâminas</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="../css/style.css">
+
+<link rel="stylesheet" href="../css/responsive.css">
 
 </head>
 
 
 <body>
 
+<header>
 
-<div class="container">
+<div class="container menu">
 
+<div class="logo">
+Bras<span>Lâminas</span>
+</div>
 
-<h1>
-Entre em contato
-</h1>
+<button class="nav-toggle" id="menu-toggle" aria-label="Abrir menu">
+<span></span>
+<span></span>
+<span></span>
+</button>
 
-
-<p>
-Telefone:
-</p>
-
-
-<p>
-Email:
-</p>
-
+<nav>
+<a href="../index.html">Inicio</a>
+<a href="produtos.html">Produtos</a>
+<a href="contato.html">Contato</a>
+<a href="carrinho.html" class="cart-link">Carrinho<span class="cart-badge" id="cart-count">0</span></a>
+<a href="pedidos.html">Pedidos</a>
+<a href="admin.html" id="nav-admin" style="display:none">Admin</a>
+<a href="login.html" id="nav-auth">Login</a>
+</nav>
 
 </div>
 
+</header>
+
+
+<section class="page">
+
+<div class="container">
+
+<h1>Entre em contato</h1>
+
+<div class="form-card">
+
+<div class="form-group">
+
+<label>Telefone</label>
+
+<p>(11) 4002-8922</p>
+
+</div>
+
+<div class="form-group">
+
+<label>E-mail</label>
+
+<p>contato@braslaminas.com.br</p>
+
+</div>
+
+<div class="form-group">
+
+<label>Endereço</label>
+
+<p>Rua dos Laboratórios, 100 - São Paulo/SP</p>
+
+</div>
+
+<hr style="border:none;border-top:1px solid #eee;margin:20px 0">
+
+<div id="mensagem"></div>
+
+<form id="form-contato">
+
+<div class="form-group">
+
+<label for="ct-nome">Nome</label>
+
+<input type="text" id="ct-nome" placeholder="Seu nome" required>
+
+</div>
+
+<div class="form-group">
+
+<label for="ct-email">E-mail</label>
+
+<input type="email" id="ct-email" placeholder="voce@email.com" required>
+
+</div>
+
+<div class="form-group">
+
+<label for="ct-mensagem">Mensagem</label>
+
+<textarea id="ct-mensagem" rows="4" placeholder="Como podemos ajudar?" required></textarea>
+
+</div>
+
+<button type="submit" class="btn">Enviar mensagem</button>
+
+</form>
+
+</div>
+
+</div>
+
+</section>
+
+
+<footer>
+
+<div class="container footer-grid">
+
+<div>
+
+<div class="logo">
+Bras<span>Lâminas</span>
+</div>
+
+<p>
+Qualidade e precisão em lâminas, lamínulas e insumos para microscopia.
+</p>
+
+</div>
+
+
+<div>
+
+<h3>Navegação</h3>
+
+<ul>
+
+<li><a href="../index.html">Inicio</a></li>
+
+<li><a href="produtos.html">Produtos</a></li>
+
+<li><a href="pedidos.html">Meus pedidos</a></li>
+
+<li><a href="contato.html">Contato</a></li>
+
+</ul>
+
+</div>
+
+
+<div>
+
+<h3>Atendimento</h3>
+
+<p>(11) 4002-8922</p>
+
+<p>contato@braslaminas.com.br</p>
+
+<p>Rua dos Laboratórios, 100 — São Paulo/SP</p>
+
+</div>
+
+</div>
+
+
+<div class="footer-bottom">
+
+<div class="container">
+© 2026 BrasLâminas. Todos os direitos reservados.
+</div>
+
+</div>
+
+</footer>
+
+
+<button id="back-top" aria-label="Voltar ao topo">↑</button>
+
+
+<script src="../js/api.js"></script>
+
+<script src="../js/app.js"></script>
+
+<script src="../js/contact.js"></script>
 
 </body>
 

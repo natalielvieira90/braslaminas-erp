@@ -1,65 +1,156 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="pt-BR">
 
 <head>
 
-<title>Produtos</title>
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Produtos - BrasLâminas</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="../css/style.css">
+
+<link rel="stylesheet" href="../css/responsive.css">
 
 </head>
 
 
 <body>
 
-
 <header>
 
-<h1>
-Produtos BrasLâminas
-</h1>
+<div class="container menu">
+
+<div class="logo">
+Bras<span>Lâminas</span>
+</div>
+
+<button class="nav-toggle" id="menu-toggle" aria-label="Abrir menu">
+<span></span>
+<span></span>
+<span></span>
+</button>
+
+<nav>
+<a href="../index.html">Inicio</a>
+<a href="produtos.html">Produtos</a>
+<a href="contato.html">Contato</a>
+<a href="carrinho.html" class="cart-link">Carrinho<span class="cart-badge" id="cart-count">0</span></a>
+<a href="pedidos.html">Pedidos</a>
+<a href="admin.html" id="nav-admin" style="display:none">Admin</a>
+<a href="login.html" id="nav-auth">Login</a>
+</nav>
+
+</div>
 
 </header>
 
 
-
-<section class="produtos">
-
+<section class="page">
 
 <div class="container">
 
+<h1>Catálogo de Produtos</h1>
 
-<h2>
-Catálogo
-</h2>
+<div class="toolbar">
 
+<input type="search" id="busca" placeholder="Buscar produto...">
 
-<div class="grid">
+<select id="categoria">
 
+<option value="">Todas as categorias</option>
 
-<div class="card">
-
-<h3>
-Lâminas
-</h3>
-
-<p>
-Produto profissional
-</p>
-
+</select>
 
 </div>
 
+<p id="produtos-status" style="display:none"></p>
+
+<div class="grid" id="grid-produtos"></div>
 
 </div>
-
-
-</div>
-
 
 </section>
 
+
+<footer>
+
+<div class="container footer-grid">
+
+<div>
+
+<div class="logo">
+Bras<span>Lâminas</span>
+</div>
+
+<p>
+Qualidade e precisão em lâminas, lamínulas e insumos para microscopia.
+</p>
+
+</div>
+
+
+<div>
+
+<h3>Navegação</h3>
+
+<ul>
+
+<li><a href="../index.html">Inicio</a></li>
+
+<li><a href="produtos.html">Produtos</a></li>
+
+<li><a href="pedidos.html">Meus pedidos</a></li>
+
+<li><a href="contato.html">Contato</a></li>
+
+</ul>
+
+</div>
+
+
+<div>
+
+<h3>Atendimento</h3>
+
+<p>(11) 4002-8922</p>
+
+<p>contato@braslaminas.com.br</p>
+
+<p>Rua dos Laboratórios, 100 — São Paulo/SP</p>
+
+</div>
+
+</div>
+
+
+<div class="footer-bottom">
+
+<div class="container">
+© 2026 BrasLâminas. Todos os direitos reservados.
+</div>
+
+</div>
+
+</footer>
+
+
+<button id="back-top" aria-label="Voltar ao topo">↑</button>
+
+
+<script src="../js/api.js"></script>
+
+<script src="../js/app.js"></script>
+
+<script src="../js/catalog.js"></script>
+
+<script src="../js/products.js"></script>
 
 </body>
 
